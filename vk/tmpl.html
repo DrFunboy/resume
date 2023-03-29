@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html style="font-family: sans-serif;">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+
+  </head>
+  <body style="background:transparent">
+
+    <div id="noGroupBlock" style="display:none;">
+      <button type="button" onclick="install()">Установить в сообщество</button>
+    </div>
+
+    <div id="noDomainBlock" style="display:none;">
+      <button type="button" onclick="connect( prompt('Домен сайта (yoursite.com)', ''))">Подключить домен</button>
+    </div>
+
+    <div id="vkForm" class="bg-white" style="display:none;">
+      <div data-link="visible{:is_admin && group}">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="tab" href="#form">Просмотр формы</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-toggle="tab" href="#setting">Настройки</a>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade" id="form">
+              <div data-link="id{:is_admin? 'newLeadForm':''}">
+                <div class="alert alert-warning" data-link="visible{:!old_domain}">
+                  Домен не подключен.
+                </div>
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status" data-link="visible{:old_domain}">
+                  <span class="sr-only">Loading...</span>
+                </div>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="setting">
+              <div class="form-row align-items-end">
+                <div class="col-md-9 col-sm-12 mb-3">
+                  <label for="domenName" class="d-flex">
+                    <div>Домен сайта</div>
+                    <div class='text-muted ml-1'>(https)</div>
+                  </label>
+                  <input type="text" class="form-control" id="domenName" placeholder="yoursite.com" data-link="domain">
+                </div>
+                <div class="col-3 mb-3">
+                  <button class="btn btn-primary" data-link="disabled{:!domain|| domain == old_domain} {on connect}">Проверить подключение</button>
+                </div>
+              </div>
+
+              <h3 class="card-title text-black"> Параметры </h3>
+
+              <div class="form-row align-items-end">
+                <div class="col-md-9 col-sm-12 mb-3">
+                  <label for="eformName" >Конфигурация</label>
+                  <input type="text" class="form-control" id="eformName" data-link="{:config^eform:}" placeholder="welcome">
+                </div>
+                <div class="col-3 mb-3">
+                  <button class="btn btn-primary" data-link="disabled{:!old_domain} {on saveCfg}" title='Доступно после проверки домена'>Сохранить</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id='newLeadForm' class="h-100 p-3" data-link="visible{:!is_admin && group}"></div>
+    </div>
+    <script>
+      vkBridge.send('VKWebAppInit');
+
+      var backData = [[backData]];
+
+      var params = window
+      .location
+      .search
+      .replace('?','')
+      .split('&')
+      .reduce(
+        function(p,e){
+          var a = e.split('=');
+          p[decodeURIComponent(a[0])] = decodeURIComponent(a[1]);
+          return p;
+        },
+        {}
+      );
+
+      function install(){
+        vkBridge.send('VKWebAppAddToCommunity');
+      }
+
+      vkBridge.subscribe(event => {
+        if (event.detail.type == 'VKWebAppAddToCommunityResult') window.top.location.href = "https://vk.com/app"+params.vk_app_id+"_-"+event.detail.data.group_id;
+      });
+
+      function connect(domain){
+        if (!domain || domain == "") {
+          alert("Неверный домен");
+          return false;
+        }
+        if ( !domain.includes('http') ) domain = `https://${domain}`;
+
+        fetch(window.location.origin+window.location.pathname+'index.php', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify( Object.assign(params, {
+            domain: domain,
+            ping: true
+          }) ),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+          if (!data.saved) alert("Неверный домен");
+          else {
+            if (typeof SCRM != 'undefined') {
+              SCRM.success("Успешно, страница будет перезагружена");
+              setTimeout(function(){ location.reload() }, 3000);
+            }
+            else {
+              alert("Успешно, страница будет перезагружена");
+              location.reload();
+            }
+          }
+        });
+      }
+
+      if (!params.vk_group_id) {
+        document.getElementById("noGroupBlock").style.display = "block";
+      } else if (backData.is_admin && !backData.domain) {
+        document.getElementById("noDomainBlock").style.display = "block";
+      }
+
+      if (backData.domain) {
+        let base = document.createElement('base');
+        base.href = backData.domain;
+        document.head.append(base);
+
+        let script = document.createElement('script');
+        script.src = '/assets/id/wss/jquery.min.js';
+        script.onload = function(){
+
+          let script = document.createElement('script');
+          script.src = "/js/start.js?mode=frame&v=0.1";
+          script.onload = function(){
+            XXX = [
+              '/assets/id/wss/theme.min.css',
+              'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+              '/assets/id/wss/bootstrap.js?ver=4.6.0'
+            ];
+
+           XXX, function(){
+              var app = {
+                connect: function(e,d){
+                  connect(d.linkCtx.data.domain);
+                },
+                saveCfg: function(){
+                  pJSON(window.location.origin + window.location.pathname + 'index.php', $.extend(params, {
+                    config: app.config
+                  }), function(data){
+                    if (data.saved) {
+                      SCRM.success("Сохранено, страница будет перезагружена");
+                      setTimeout(function(){ location.reload() }, 3000);
+                    }
+                    else alert("Ошибка");
+                  })
+                },
+                group: params.vk_group_id,
+                appid: params.vk_app_id,
+                config: {}
+              };
+              $("#vkForm").css("display", "block");
+              $.link(true, "#vkForm", app);
+              if (app.group) {
+                vkBridge
+                  .send('VKWebAppGetUserInfo')
+                  .then(data => {
+                  app.userUnfo = {
+                    contact: `${data.first_name} ${data.last_name}`,
+                    birth: data.bdate,
+                    source: "ВКонтакте",
+                    ext: JSON.stringify({
+                      vk_link: "https://vk.com/id"+data.id
+                    })
+                  };
+
+                  if (!backData.config || !backData.config.eform) backData.config = {eform: 'welcome'};
+
+                  SCRM.link(app, {
+                    is_admin: backData.is_admin,
+                    domain: backData.domain,
+                    old_domain: backData.domain,
+                    config: backData.config
+                  });
+
+                  if ( backData.is_admin ) $('[href="#form"]').tab('show');	
+
+                  SCRM._run(`/chunk/eform/${app.config.eform}`, {
+                    container: '#newLeadForm',
+                    edata: app.userUnfo
+                  });
+                });
+              }
+            })
+          };
+          document.head.append(script);
+        }
+        document.head.append(script);
+      }
+    </script>
+
+  </body>
+</html>
