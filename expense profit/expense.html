@@ -1,0 +1,136 @@
+<script id="mdl_addExp" type="text/js-render">
+    <div class="row">
+        <div class="col-12 mb-3">
+            <label>Статья <abbr title="Обязательно к заполнению">*</abbr></label> 
+            <select class="custom-select" data-link="{:newRow.status.val:} class{merge:newRow.status.bad toggle='is-invalid'}">
+                {{for statusList}} 
+                    <option value="{{:id}}">{{:name}}</option>
+                {{/for}}
+            </select>
+        </div>
+        <div class="col-6 mb-3">
+            <label>Сумма <abbr title="Обязательно к заполнению">*</abbr></label>
+            <input type="number" class="form-control" data-link="{:newRow.sum.val:} class{merge:newRow.sum.bad toggle='is-invalid'}">
+        </div>
+        
+        <div class="col-6 mb-3">
+            <label>Дата и время <abbr title="Обязательно к заполнению">*</abbr></label> 
+            <input type="text" class="form-control" id="addExpDate" data-link="{:newRow.date.val:} class{merge:newRow.date.bad toggle='is-invalid'}">
+        </div>
+        
+        <div class="col-12 mb-3 d-none">
+            <label class="text-success" for="addrow_planfact">Факт</label>
+            <label class="switcher-control"><input type="checkbox" id="addrow_planfact" class="switcher-input" data-link="{:newRow.plan.val:} class{merge:newRow.plan.bad toggle='is-invalid'}"><span class="switcher-indicator"></span></label>
+            <label class="text-primary" for="addrow_planfact">План (ежемесячно)</label>
+        </div>
+        
+        <div class="col-12 mb-3">
+            <label>Комментарий</label> 
+            <textarea class="form-control" data-link="{:newRow.info.val:} class{merge:newRow.info.bad toggle='is-invalid'}"></textarea>
+        </div>
+    </div>
+    </script>
+    
+    <div id="tabExpense">
+        <button class="btn btn-success mb-1" data-link="{on 'click' addExp}"><i class="fa fa-plus"></i></button>
+        <table id="grExpense" data-entity="idExpense"></table>
+    </div>
+    
+    
+    <script>
+    load_wss(['grid'], function(){
+        $('#grExpense')
+        //.on('jqGridBeforeInit', function(e, grOpts) {
+        //    grOpts.colModel.push({name: 'nameimas', editable: true});
+        //})
+        .jqGridInit({
+            sortname: 'created', sortorder: 'desc',
+            colModel:[
+                {name:'id', hidden: true, template: idFieldTemplate},
+                {name:'date', label: 'Дата', template:dateTemplate},
+                {name:'status', editable: true, label: 'Статья', width: 180, 
+                    template: selTemplate,
+                    clubStatus: 'idExpense', lookupKey: 'id'
+                },
+                {name:'sum', editable: true, label:'Сумма', template:numberTemplate},
+                {name:'plan', editable: true, label:'План-факт'},
+                {name:'info', editable: true, label:'Комментарий', width:250, template: infoTemplate},
+                {name:'created', hidden: false, label:'Создано', template: createdTemplate},
+            ],
+            navOpts: {add:false, edit:true, search:false}
+        })
+        .jqGrid('filterToolbar')
+        .jqGridColumns();
+        
+        var expense = {
+            addExp: function(){
+                var statusList = [[!clubStatus?tbl=`idExpense`]];
+                var addMdl = {
+                    title: "Добавить расход",
+                    statusList: statusList,
+                    body: "#mdl_addExp",
+                    newRow: {
+                        status: {
+                            val: statusList[0].id,
+                            req: true
+                        },
+                        sum: {
+                            val: "",
+                            req: true
+                        },
+                        date: {
+                            val: str2date("now", "d"),
+                            req: true
+                        },
+                        info: {
+                            val: ""
+                        },
+                        plan: {
+                            val: 0
+                        }
+                    },
+                    ok: "Сохранить",
+                    status: statusList[0].id,
+                    onOK: function(){
+                        addMdl.newRow.plan = addMdl.newRow.plan? '1m' : 'fact';
+                        var error = false;
+                        $.each(addMdl.newRow, function(k,v){
+                            if (v.req) {
+                                if (!v.val) {
+                                    SCRM.link(addMdl.newRow[k]).setProperty("bad", true);
+                                    error = true;
+                                } else SCRM.link(addMdl.newRow[k], {bad: false});
+                            }
+                        });
+                        console.log(addMdl.newRow);
+                        if (error) alert("Не все поля заполнены");
+                        /*
+                        if (!addMdl.date || !addMdl.sum || !addMdl.status) alert("Не все поля заполнены");
+                        else {
+                            pEDIT("idExpense", {
+                                oper: "add",
+                                plan: addMdl.plan,
+                                status: addMdl.status,
+                                sum: addMdl.sum,
+                                date: addMdl.date,
+                                info: addMdl.info
+                            }, function(row){
+                                addMdl.mdl_hide();
+                                $('#grExpense').trigger('reloadGrid', [{current:true}]);
+                            });
+                        }*/
+                    }
+                };
+                club_Modal(addMdl)
+                .on("shown.bs.modal", function(){
+                    $("#addExpDate")
+                    .initDateEdit({
+                        defaultDate: "today"
+                    });
+                });
+            }
+        };
+        
+        $.link(true, "#tabExpense", expense);
+    })
+    </script>

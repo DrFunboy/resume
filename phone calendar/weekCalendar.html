@@ -1,0 +1,103 @@
+<style>
+@media screen and (max-width: 400px) {
+    .weekCalendar button {
+        font-size: 0.8rem;
+    }
+}
+@media screen and (max-width: 300px) {
+    .weekCalendar button {
+        font-size: 0.6rem;
+    }
+}
+.weekCalendar button {
+    padding: 0.2rem 0.3rem;
+}
+</style>
+
+<script id="tpl_weekCalendar" type="text/x-jsrender">
+<div class="d-flex weekCalendar">
+<button type="button" class="btn btn-light m-auto" data-link="{on ~list step*-1}"><i class="fa fa-chevron-left"></i></button>
+{^{for selectWeek ~selected=selected}}
+    <button type="button" data-link="{on ~selectDate} class{:fullDate == ~selected? 'h-auto btn btn-primary m-auto':'h-auto btn btn-subtle-light m-auto'}">
+        <strong>{{:abbr}}</strong> 
+        <div data-link="hidden{:today}" style="border-top: 1px solid rgba(255,255,255,0);"></div>
+        <div data-link="hidden{:!today} class{:fullDate == ~selected? 'border-light border-top':'border-primary border-top'}"></div>
+        <small>{{:smallDate}}</small>
+    </button>    
+{{/for}}
+<button type="button" class="btn btn-light m-auto" data-link="{on ~list step}"><i class="fa fa-chevron-right"></i></button>
+</div>
+</script>
+
+
+<script>
+(function( $ ){
+$.fn.weekCalendar = function(params = {}){
+    var wc = this;
+    wc.each(function(){
+        var wcData = { step: 7 };
+        var el = $(this).data('wcData', wcData);
+        var block = $('<div style="display:none"></div>').insertBefore(el);
+        
+        el.trigger('weekCalendarInit', wcData);
+    
+        $.templates('#tpl_weekCalendar')
+        .link(el, wcData, {
+            selectDate: function(e,d){
+                SCRM.link(wcData, "selected", d.linkCtx.data.fullDate);
+            },
+            list: function(step, e, d){
+                var listWeek = new Date(wcData.weekstart.getFullYear(), wcData.weekstart.getMonth(), wcData.weekstart.getDate()+step, 23),
+                selected = new Date(wcData.selected);
+                selected = new Date(selected.getFullYear(), selected.getMonth(), selected.getDate()+step, 23).toISOString().split("T")[0];
+                SCRM.link(wcData, {
+                    weekstart: listWeek,
+                    selectWeek: calcWeek(listWeek),
+                    selected: selected
+                });
+                
+                el.trigger('weekCalendarBuild', wcData);
+            },
+        });
+        
+        $.observe(wcData,"selected", function(e,d){
+            el.trigger('weekCalendarChange', d.value);
+        })
+        
+        function calcWeek(start) {
+            var week = [],
+            today = new Date();
+            for (i = 0; i < 7; i++) {
+                var d = start.getDate(),
+                m = start.getMonth(),
+                y = start.getFullYear(),
+                date = new Date(y, m, d+i, 23);
+                
+                week.push({
+                    abbr: localeDate(date.toISOString().slice(0, 10), "l").toUpperCase(),
+                    smallDate: leadZero(date.getDate())+"."+leadZero(date.getMonth()+1),
+                    fullDate: date.toISOString().split("T")[0],
+                    today: (m == today.getMonth() && y == today.getFullYear() && today.getDate() == date.getDate())
+                });
+            }
+            return week;
+        }
+        
+        var weekstart = params.selected?  new Date(params.selected) : new Date();
+        var weekInfo = new Intl.Locale(navigator.language).weekInfo;
+        if (weekInfo.firstDay == 7) weekInfo.firstDay = 0;
+        
+        var diff = (weekstart.getDay() == 0 && weekInfo.firstDay != 0)? weekInfo.firstDay-7 : weekInfo.firstDay;
+        weekstart.setDate(weekstart.getDate() - weekstart.getDay() + diff );
+        
+        $( document ).ready(function(){
+            SCRM.link(wcData, $.extend({
+                selected: (new Date()).toISOString().split("T")[0],
+                weekstart: weekstart,
+                selectWeek: calcWeek(weekstart)
+            }, params) );
+        });
+    });
+};
+})( jQuery );
+</script>

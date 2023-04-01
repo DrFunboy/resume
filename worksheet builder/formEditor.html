@@ -1,0 +1,511 @@
+<style>
+    li {
+        list-style-type: none;
+    }
+</style>
+
+<script id="addFieldMdl_tpl" type="text/x-jsrender">
+<div class="form-group">
+    <div class="form-label-group mb-2">
+        <label for="selTypeNF">Тип нового поля</label>
+        <select class="custom-select" id="selTypeNF" data-link="newfield.type">
+            {{props worksheetOpts.types}}
+                <option value="{{:key}}">{{:prop}}</option>
+            {{/props}}
+        </select>
+    </div>
+    <div class="form-label-group mb-2">
+        <input class="form-control" id="nameNF" data-link="newfield.name"> 
+        <label for="nameNF">Название</label>
+    </div>
+    {^{if newfield^type == "input"}}
+        <div class="form-label-group mb-2">
+            <input class="form-control" id="valNF" data-link="newfield.value"> 
+            <label for="valNF">Значение по умолчанию</label>
+        </div>
+    {{else newfield^type == "textarea"}}
+        <div class="mb-2">
+            <textarea class="form-control" id="valNF" data-link="newfield.value"></textarea>
+        </div>
+    {{else newfield^type == "select" || newfield^type == "multiselect"}}
+        {^{for newfield^options end=1}}
+            <div class="input-group has-clearable mb-2">
+                <input type="text" class="form-control" data-link="name" placeholder="Вариант">
+            </div>
+        {{/for}}
+        {^{for newfield^options start=1 ~delOption=worksheetOpts.delOption}}
+            <div class="input-group has-clearable mb-2">
+                <button class="btn btn-light close show" data-toggle="dropdown"><i class="fa fa-fw fa-ellipsis-v"></i></button>
+                <div class="dropdown-menu dropdown-menu-right stop-propagation">
+                    <div class="dropdown-arrow"></div>
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" data-link="needInp">
+                        <span class="custom-control-label">Свой вариант</span>
+                    </label>
+                    <a href="#" class="dropdown-item" data-link="{on 'click' ~delOption}">
+                        Удалить
+                    </a>
+                </div>
+                <input type="text" class="form-control" data-link="name" placeholder="Вариант">
+            </div>
+            <div class="form-label-group mb-2" data-link="visible{:needInp}">
+                <input class="form-control border border-primary" id="valNF" data-link="needInpInfo"> 
+                <label for="valNF">Пояснение к полю</label>
+            </div>
+        {{/for}}
+        <div class="mb-2">
+            <a href="#" data-link="{on 'click' worksheetOpts.addOption}">Добавить вариант</a>
+        </div>
+    {{else newfield^type == "html"}}
+        <div class="mb-2">
+            <textarea class="form-control" id="valNF" data-link="newfield.value"></textarea>
+        </div>
+    {{/if}}
+    <div class="custom-control custom-control-inline custom-checkbox" data-link="visible{:newfield^type != 'h4'}">
+        <input id="reqNF" type="checkbox" class="custom-control-input" data-link="newfield.req"> 
+        <label for="reqNF" class="custom-control-label">Обязательное поле</label>
+    </div>
+</div>
+</script>
+
+<script id="addFormMdl_tpl" type="text/x-jsrender">
+<div class="form-group">
+    <div class="form-label-group mb-2">
+        <input class="form-control" id="formName" data-link="formName"> 
+        <label for="formName">Название</label>
+    </div>
+</div>
+</script>
+
+<script>
+if (SCRM.idSportsmen){
+    var newTab = {
+    SCRM: SCRM,
+    id: "worksheetTab",
+    name: "<div data-run='/chunk/formPlayer'>Анкеты</div>",
+    tpl: "#player_tpl",
+    saveResults: function(e, formdata){
+        e.preventDefault();    
+        var selForm = newTab.selForm,
+            invalid = false,
+            result = newTab.allForms[selForm].extended;
+        $.each(result, function(k,v){
+            if ( v.type == "multiselect" && v.req ) {
+                invalid = !v.value.length;
+                $.observable(result[k]).setProperty("invalid", invalid);
+                if (!v.value.length) return false;
+            }
+        });
+        if ( !invalid ) {
+            $.ajax({
+                type: "POST",
+                url: "/hook/sportsmenWorksheet",
+                data: {
+                    spid: sp_data.id, 
+                    data: JSON.stringify(result),
+                    formid: newTab.allForms[selForm].id
+                }
+            }).done(function(data){
+                $.observable(newTab.allForms[selForm]).setProperty("idExtid_extended", newTab.allForms[selForm].extended);
+            })
+        } else {
+            clubScroll($('.text-danger.custom-control-label.invalid-cb')[0]);
+        }
+    }
+}
+    $.observable(sp_data.addMenu).insert(newTab);
+    SCRM._service['/chunk/formPlayer'] = function() {
+        $.ajax({
+            type: "GET",
+            url: "/hook/sportsmenWorksheet",
+            data: {
+                spid: sp_data.id
+            }
+        }).done(function(data){
+            data = JSON.parse(data);
+            $.each(data.rows, function(k,v){
+                v.extended = JSON.parse(v.extended);
+                if (v.idExtid_extended) v.idExtid_extended = JSON.parse(v.idExtid_extended);
+            });
+            var selForm = -1;
+            if (data.rows.length == 1) selForm = 0;
+            $.observable(newTab).setProperty({
+                allForms: data.rows,
+                selForm: selForm
+            });
+        })
+    }
+}
+SCRM._service['/chunk/formEditor'] = function() {
+    function getAllForms(){
+        $.ajax({
+            type: "GET",
+            url: "/hook/sportsmenWorksheet",
+            data: {
+                sidx: {
+                    "menuindex": "ASC",
+                    "name": "ASC"
+                }
+            }
+        }).done(function(result){
+            result = JSON.parse(result);
+            $.each(result.rows, function(k,v){
+                if (v.extended) v.extended = JSON.parse(v.extended);
+                else v.extended = [];
+            });
+            result.rows.length? selForm = 0 : selForm = -1;
+            $.observable(worksheetOpts).setProperty({
+                allForms: result.rows,
+                selForm: selForm
+            });
+        })
+    };
+    
+    var worksheetOpts = {
+        selFormRows: [],
+        addOption: function(e,data){
+            e.preventDefault();
+            var newop = {id:SCRM.uniqid()};
+            data.view.parent.data.mdl? parent = data.view.parent.data.newfield.options : parent = data.view.parent.data.options;
+            $.observable(parent).insert(newop);
+        },
+        delOption: function(e,data){
+            e.preventDefault();
+            $.observable(data.view.parent.data).remove(data.view.index)
+        },
+        addfield: function(e,data){
+            e.preventDefault();
+            var addFieldMdl = {
+                worksheetOpts: worksheetOpts,
+                newfield: {
+                    type: "input",
+                    id: SCRM.uniqid(),
+                    menuindex: worksheetOpts.selFormRows.length + 1,
+                    options: [{name: "Первый вариант"}]
+                },
+                body: '#addFieldMdl_tpl',
+                ok: "Добавить",
+                onOK: function(e, md){
+                    if ( md.newfield.type == "select") md.newfield.value = "";
+                    else if ( md.newfield.type == "multiselect" ) md.newfield.value = [];
+                    else delete md.newfield.options;
+                    if (worksheetOpts.selFormRows.length) {
+                        SCRM.link(worksheetOpts.selFormRows).insert(md.newfield);
+                    } else {
+                        SCRM.link(worksheetOpts, {
+                            selFormRows: [md.newfield]
+                        });
+                    }
+                    
+                    md.mdl_hide();
+                }
+            };
+            club_Modal(addFieldMdl);
+        },
+        delfield: function(e,data){
+            $.observable(data.view.parent.data).remove(data.view.index);
+        },
+        addForm: function(e,data){
+            var addFormMdl = {
+                body: '#addFieldMdl_tpl',
+                ok: "Создать",
+                disabledOK: true,
+                title: "Новая анкета",
+                onOK: function(e,d){
+                    function checkAlias(){
+                        addFormMdl.formAlias = SCRM.uniqid();
+                        
+                        pDATA('idStatus', {
+                            _where:{
+                                tbl:'idForm',
+                                alias: addFormMdl.formAlias
+                            }
+                        }, function(rows) {
+                            if (rows.rows.length) checkAlias();
+                            else {
+                                pEDIT('idStatus', {
+                                    oper: "add",
+                                    tbl: "idForm",
+                                    alias: addFormMdl.formAlias,
+                                    name: addFormMdl.formName
+                                }, function(newRow){
+                                    newRow.row.extended = [];
+                                    $.observable(worksheetOpts.allForms).insert(newRow.row);
+                                    $.observable(worksheetOpts).setProperty("selForm", worksheetOpts.allForms.length-1);
+                                    addFormMdl.mdl_hide();
+                                })
+                            }
+                        })
+                    };
+                    checkAlias()
+                }
+            };
+            club_Modal(addFormMdl)
+            .on('shown.bs.modal', function (e,d) {
+                $.observe(addFormMdl, "formName", function(e,d){
+                    if ( d.value != "" ) $.observable(addFormMdl).setProperty("disabledOK", false);
+                    else $.observable(addFormMdl).setProperty("disabledOK", true);
+                });
+            });
+        },
+        delForm: function(){
+             var delFormMdl = {
+                ok: "Удалить",
+                body: "Удалить "+worksheetOpts.allForms[worksheetOpts.selForm].name+"?",
+                onOK: function(e,d){
+                    pEDIT('idStatus', {
+                        oper: "del",
+                        id: worksheetOpts.allForms[worksheetOpts.selForm].id
+                    }, function(){
+                        getAllForms();
+                        $.observable(worksheetOpts).setProperty("selForm", "");
+                        delFormMdl.mdl_hide();
+                    })
+                }
+            };
+            club_Modal(delFormMdl)
+        },
+        saveForm: function(){
+            pEDIT('idStatus', {
+                id: worksheetOpts.allForms[worksheetOpts.selForm].id,
+                extended: JSON.stringify(worksheetOpts.selFormRows)
+            }, function(result) {
+                SCRM.success("Сохранено");
+            });
+        },
+        types: {
+            input: "Текст",
+            textarea: "Длинный текст",
+            select: "Выбор варианта",
+            multiselect: "Выбор нескольких вариантов",
+            date: "Дата",
+            h4: "Раздел",
+            html: "HTML"
+        }
+    };
+    
+    getAllForms();
+    
+    SCRM.wssRes['sortable'] = [
+        'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js'
+    ];
+    
+    SCRM.link(optsData, {
+        worksheetOpts: worksheetOpts,
+        optsTmpl: '#editor_tpl'
+    });
+    
+    $.observe(worksheetOpts, 'selForm', function(e, data){
+        SCRM.link(worksheetOpts, {
+            selFormRows: (worksheetOpts.allForms[data.value] || {}).extended || []
+        });
+    });
+    
+    $.observe(worksheetOpts, 'selFormRows', function(e, data){
+        SCRM.link(worksheetOpts.allForms[worksheetOpts.selForm], {extended: data.value});
+    });
+    
+    SCRM.loadWSS('sortable', function(){
+        $('[data-toggle="sortable"]').each(function () {
+            var options = $(this).data();
+            options.onEnd = function (evt) {
+                var childrens = evt.from.children;
+                new_rows = [],
+                $.each(childrens, function(index, el){
+                    var idx = $(el).data('idx');
+                    if (idx) {
+                        var row = worksheetOpts.selFormRows[idx-1];
+                        row.menuindex = index;
+                        new_rows.push(row);
+                    }
+                });
+                SCRM.link(worksheetOpts, {selFormRows: new_rows});
+            };
+            options.animation = options.animation || 150;
+            options.filter = options.filter || '.ignore-sort';
+            Sortable.create(this, options);
+        });
+    });
+}
+</script>
+
+<script id="editor_tpl" type="text/x-jsrender">
+{^{include worksheetOpts itemVar="~wsOpts" ~scrm=SCRM}}
+<div class="mb-2 d-flex">
+    <select class="custom-select" data-link="selForm">
+        {^{for allForms}}
+            <option value="{{:#index}}">{{:name}}</option>
+        {{/for}}
+    </select>
+    <button class="btn btn-success ml-2" data-link="{on addForm}"><i class="fa fa-plus"></i></button>
+</div>
+
+<div class="card card-fluid" data-link="visible{:selForm >= 0}">
+    <div class="card-body">
+        <ul class="sortable-lists list-group list-group-flush" data-toggle="sortable" id="anketaEditorFields" data-link="{for selFormRows sort='menuindex'
+        tmpl='#editorrows_tpl'}"></ul>
+    
+        <a href="#" data-link="{on 'click' addfield}">
+            <button class="btn btn-success btn-xs"><i class="fa fa-plus"></i></button>
+        </a>
+    </div>
+    <div class="card-footer p-1 d-flex">
+        <button class="btn btn-primary btn-xs" data-link="{on saveForm}">Сохранить</button>
+        <button class="btn btn-outline-secondary btn-xs ml-auto" data-link="{on delForm}">
+            <i class="fa fa-trash"></i>
+        </button>
+    </div>
+</div>
+{{/include}}
+</script>
+
+<script id="editorrows_tpl" type="text/x-jsrender">
+<li class="form-group mb-3 drag-handle" data-link="data-idx{:#index+1}">
+    <div class="p-2 bd-highlight">
+        <div class="drag-indicator"></div>
+        {^{props ~wsOpts.types ~type=type}}
+            {{if ~type == key}} {{:prop}} {{/if}}
+        {{/props}}
+    </div>
+    <div class="form-label-group mb-2">
+        <input class="form-control" id="name{{:#getIndex()}}" data-link="name"> 
+        <label for="name{{:#getIndex()}}">Название</label>
+    </div>
+    {^{if type == "input"}}
+        <div class="form-label-group mb-2">
+            <input class="form-control" id="val{{:#getIndex()}}" data-link="value"> 
+            <label for="val{{:#getIndex()}}">Значение по умолчанию</label>
+        </div>
+    {{else type == "textarea"}}
+        <div class="mb-2">
+            <textarea class="form-control" id="val{{:#getIndex()}}" data-link="value"></textarea>
+        </div>
+    {{else type == "select" || type == "multiselect"}}
+        {^{for options end=1}}
+            <div class="input-group has-clearable mb-2">
+                <input type="text" class="form-control" data-link="name" placeholder="Вариант">
+            </div>
+        {{/for}}
+        {^{for options start=1 ~id=id}}
+            <div class="input-group has-clearable mb-2">
+                <button class="btn btn-light close show" data-toggle="dropdown"><i class="fa fa-fw fa-ellipsis-v"></i></button>
+                <div class="dropdown-menu dropdown-menu-right stop-propagation">
+                    <div class="dropdown-arrow"></div>
+                    <label class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" data-link="needInp">
+                        <span class="custom-control-label">Свой вариант</span>
+                    </label>
+                    <a href="#" class="dropdown-item" data-link="{on 'click' ~wsOpts.delOption}" data-id="{{:~id}}">
+                        Удалить
+                    </a>
+                </div>
+                <input type="text" class="form-control" data-link="name" placeholder="Вариант">
+            </div>
+            <div class="form-label-group mb-2" data-link="visible{:needInp}">
+                <input class="form-control border border-primary" id="valNF" data-link="needInpInfo"> 
+                <label for="valNF">Пояснение к полю</label>
+            </div>
+        {{/for}}
+        <div class="mb-2">
+            <a href="#" data-link="{on 'click' ~wsOpts.addOption}">Добавить вариант</a>
+        </div>
+    {{else type == "html"}}
+        <div class="mb-2">
+            <textarea class="form-control" id="val{{:#getIndex()}}" data-link="value"></textarea>
+        </div>
+    {{/if}}
+    <div class="custom-control custom-control-inline custom-checkbox" data-link="visible{:type != 'h4'}">
+        <input id="req{{:#getIndex()}}" type="checkbox" class="custom-control-input" data-link="req"> 
+        <label for="req{{:#getIndex()}}" class="custom-control-label">Обязательное поле</label>
+    </div>
+    <button class="btn btn-outline-secondary btn-xs ml-auto" data-link="{on ~wsOpts.delfield}">
+        <i class="fa fa-trash"></i>
+    </button>
+</li>
+</script>
+
+<script id="player_tpl" type="text/x-jsrender">
+<div class="card">
+    <div class="card-header">
+        <div class="mb-2 d-flex">
+            <select class="custom-select" data-link="selForm">
+                <option value="-1">-- Выберите анкету --</option>
+                {^{for allForms}}
+                    <option value="{{:#index}}">{{:name}}</option>
+                {{/for}}
+            </select>
+        </div>
+    </div>
+    <div class="card-body" data-link="visible{:selForm >= 0}">
+    {^{if allForms[selForm].idExtid_extended != null}}
+        <div>
+            <div class="alert alert-success alert-dismissible fade show" >
+                Анкета заполнена
+            </div>
+            <div class="form-row" data-link="{for allForms[selForm].idExtid_extended sort='menuindex' 
+            ~scrm=SCRM ~formCompl=true 
+            tmpl='#playerrows_tpl'}"></div>
+        </div>
+    {{else}}
+        <form data-link="{on 'submit' saveResults}">
+            <fieldset>
+                <div class="form-row" data-link="{for allForms[selForm].extended sort='menuindex' 
+                ~scrm=SCRM ~formCompl=false
+                tmpl='#playerrows_tpl'}"></div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-primary">Готово</button>
+                </div>
+            </fieldset>
+        </form>
+    {{/if}}
+    </div>
+</div>
+</script>
+
+<script id="playerrows_tpl" type="text/x-jsrender">
+    <div class="col-md-12 mb-3">
+        {^{if type == "h4"}}
+            <h4>{{:name}}</h4>
+        {{else}}
+            <label for="val{{:id}}">{{:name}}
+                {{if req}} <abbr class="text-danger" title="Обязательное поле">*</abbr> {{/if}}
+            </label>
+        {{/if}}
+        {^{if type == "input"}}
+            <input class="form-control" data-link="{:value:} required{:req} disabled{:~formCompl}" id="val{{:id}}"> 
+        {{else type == "textarea"}}
+            <textarea class="form-control" data-link="{:value:} required{:req} disabled{:~formCompl}" id="val{{:id}}"></textarea>
+        {{else type == "select"}}
+            {^{radiogroup value}}
+                {^{for options ~id=id ~value=value ~req=req}}
+                    <div class="custom-control custom-radio">
+                        <input type="radio" data-link="required{:~req} disabled{:~formCompl}" class="custom-control-input" name="rdGroup{{:~id}}" id="rd{{:~id}}{{:#index}}" value="{{:#index}}"> 
+                        <label class="custom-control-label" for="rd{{:~id}}{{:#index}}">{{:name}}</label>
+                    </div>
+                    {^{if ~value == #index && needInp}}
+                        {{:needInpInfo}}
+                        <input class="form-control mb-1" data-link="{:inpValue:} disabled{:~formCompl}">
+                    {{/if}}
+                {{/for}}
+            {{/radiogroup}}
+        {{else type == "multiselect"}}
+            {^{checkboxgroup value name='cbg'+id}}
+                {^{for options ~invalid=invalid}}
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" data-link="{:sel:} disabled{:~formCompl}" class="custom-control-input" value="{{:name}}" id="cb{{:name}}"> 
+                        <label data-link="class{:~invalid? 'text-danger custom-control-label invalid-cb':'custom-control-label'}" for="cb{{:name}}">{{:name}}</label>
+                    </div>
+                    {^{if sel && sel^includes(name) && needInp}}
+                        {{:needInpInfo}}
+                        <input class="form-control mb-1" data-link="{:inpValue:} disabled{:~formCompl}">
+                    {{/if}}
+                {{/for}}
+            {{/checkboxgroup}}
+        {{else type == "date"}}
+            <input type="text" class="form-control datefield" data-link="{:value:} required{:req} disabled{:~formCompl}" id="val{{:id}}">
+        {{else type == "html" }}
+            <br>{{:value}}
+        {{/if}}
+    </div>
+</script>

@@ -1,0 +1,30 @@
+<script>
+optsData.saveInRepo = function(){
+    var commit = prompt('Описание версии'),
+    folder = "HTML/"+optsData.optsHTMLEdit[0].key+".html",
+    content = optsData.optsHTMLEdit[0].getValue();
+    if ( commit ) {
+        $.ajax({
+            type: "POST",
+            url: "/hook/bitbucketCallback",
+            data: {commit:commit, folder:folder, content:JSON.stringify(content)}
+        }).done(function(data){
+            SCRM.success("Сохранено в репозиторий");
+        })
+    }
+}
+$.observe(optsData,"selHTML",function(){
+    function addbtn(){
+        setTimeout(function(){
+            if ( $(".card-footer.p-1.d-flex").length != 0 ) {
+                var gitbtn = $(`<button class="btn btn-primary btn-xs" onclick="optsData.saveInRepo()"><i class="fa fa-bitbucket"></i></button>`);
+                $(".btn.btn-outline-secondary.btn-xs.ml-auto").before(gitbtn);
+            } else {
+                addbtn(); 
+            }
+        }, 250)
+    }
+    addbtn();
+    console.log(optsData.selHTML);
+})
+</script>

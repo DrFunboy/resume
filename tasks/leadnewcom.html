@@ -1,0 +1,147 @@
+<script id="tpl_leadCommHead" type="text/x-jsrender"></script>
+
+<script id="tpl_tascom1" type="text/x-jsrender">
+<li class="timeline-item" data-tascom="{{:id}}">
+    <div class="timeline-figure">
+        <span class="tile tile-circle tile-sm"><i class="fa {{tascomIco:action}}"></i></span>
+    </div>
+    <div class="timeline-body">
+    {{if action == "task" ~color=color ~ico=ico tmpl="#tpl_taskBlock" }}
+    {{else}}
+        <div class="media">
+            <div class="media-body">
+                {{if header}}<h6 class="timeline-heading">{{:header}}</h6>{{/if}}
+                <div>{{:info}}1</div>
+            </div>
+            <div class="d-none1 d-sm-block1">
+                <a href="#" data-link="data-tbl{:action == 'task'? 'idTask':'idTascom'}" class="fmtCreated small text-muted" data-id="{{:id}}">
+                    {{formatDate:created}}
+                </a>
+            </div>
+        </div>
+    {{/if}}
+    </div>
+</li>
+</script>
+
+
+<script>
+function idLeadComments(lead){
+    SCRM.link(leadData, {
+        tascomLoading: true
+    });
+    pDATA('idTask', {
+        rows: 1001,
+        _where: {
+            parent: lead.id,
+            tbl: 'idLead'
+        }
+    }, function(tasks){
+        pDATA('idTascom', {
+            rows: 1001,
+            _where: {uid: lead.key}
+        }, function(data){
+            var rows = [];
+            $.each(data.rows, function(i, v){
+                if (v.action=='status') v.header = SCRM.statusName('idLead', v.name, null, true);
+                if (v.action=='call') v.header = $.map(v.name.split(''), function(c, k){
+                    var cs = callStatus[c];
+                    return cs? cs:'';
+                }).join(' ');
+                v.menuindex = v.created;
+                rows.push(v);
+            });
+            
+            var tomorrow = new Date(str2date("now", "sql"));
+            tomorrow.setTime(tomorrow.getTime() + (24*60*60*1000));
+            
+            $.each(tasks.rows, function(i, v){
+                v = SCRM._task.formatTask(v);
+                v.action = "task";
+                v.parent_name = "";
+                $.each(SCRM.clubStatus.idTask,function(tk, tv){
+                    if (tv.id == v.type){
+                        v.ico = tv.ico;
+                        return false;
+                    }
+                })
+                
+                if (!v.dateend && new Date(v.duedate) < str2date("now")) v.duedate = str2date("now","sqlt").split("T").join(" ");
+                if (!v.dateend && new Date(v.duedate) < new Date(tomorrow)) v.color = "warning";
+                else v.color = "primary";
+                
+                if (v.dateend) {
+                    v.menuindex = v.dateend;
+                    v.color = "secondary";
+                }
+                else v.menuindex = v.duedate;
+                v.onSave = function(data){
+                    idLeadComments(lead);
+                }
+                v.tbl = "idLead";
+                v.parent = leadData.lead.id;
+                rows.push(v);
+            })
+            
+            SCRM.link(leadData, {
+                tascom: rows,
+                tascomLoading: false
+            });
+        });
+    })
+}
+
+(function() {
+    SCRM.link(tascomAction, "task", "fa-tasks");
+    
+    var preset = SCRM._task.formatTask({
+        onSave: function(){
+            idLeadComments(leadData.lead);
+        },
+        onBeforeSave: function(data){
+            data.tbl = "idLead";
+            data.parent = leadData.lead.id;
+            if (data.type == typeid) {
+                data.skipsave = true;
+                
+                pEDIT('idTascom', {
+                    oper: 'add',
+                    action: 'info',
+                    uid: leadData.lead.key,
+                    info: data.info
+                }, function(out) {
+                    SCRM.link(leadData, {
+                        commentLoading: false,
+                        'post.comment':''
+                    });
+                    idLeadComments(leadData.lead);
+                });
+            };
+        },
+        onClose: function(){
+           SCRM._task.linkTaskForm($.extend({}, preset), $("#leadComLZ"));
+           $("#leadComLZ").find(".publisher").removeClass("focus active");
+        },
+        
+    });
+    var typeid = "";
+    $.each(preset.lists.type, function(k,v){
+        if (v.alias == "comment") {
+            typeid = v.id;
+            v.extended.hidden = false;
+            preset.type = v.id;
+            preset.texttype = v.name;
+            preset.tmpl = v.extended.tmpl;
+            preset.placeholder = v.name;
+            return false;
+        }
+    });
+    
+    $.observe(leadData, 'lead', function(e, data){
+        $("#leadComLZ").remove();
+        $("#eCardLead ~ .col-md-6 form").before( $(`<div id="leadComLZ" class="my-3"></div>`) );
+        $("#eCardLead ~ .col-md-6 form").addClass("d-none");
+        SCRM._task.linkTaskForm($.extend({}, preset), $("#leadComLZ"));
+    })
+})();
+</script>

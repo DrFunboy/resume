@@ -1,0 +1,431 @@
+<div id="resultManage">
+    <button type="button" class="btn btn-primary" data-link="{on 'click' ~newResult}">Старт</button>
+    <button type="button" class="btn btn-primary" data-link="{on 'click' ~chooseResult} visible{:last}">Выбрать</button>
+    
+    <div data-link="visible{:teams} {include tmpl='#tmpl_teams'}" class="card mt-3"></div>
+</div>
+
+<script id="tmpl_teams" type="text/x-jsrender">
+<div class="card-header">
+    {^{formatCtgName:result^ctgName}} {^{formatDate:result^date}} {^{:result^time}} 
+</div>
+<div class="card-expansion table border-bottom">
+    {^{props teams ~result=result sort='key'}}
+        {{if key == 'undefined'}}
+            {{for prop tmpl="#tmpl_cardItem" ~key=key sort='name'/}}
+        {{else}} 
+            {{include prop tmpl="#tmpl_cardItem" ~key=key/}}
+        {{/if}}
+    {{/props}}
+</div>
+</script>
+
+<script id="tmpl_cardItem" type="text/x-jsrender">
+<div class="card-expansion-item" data-link="class{merge:(~key == 'undefined' && ~result.cnt>1) toggle='bg-warning'}">
+    <form class="card-body border-bottom" data-link="{on 'submit' ~saveResult}" autocomplete="off">
+        <div class="row"> 
+            <div class="col-5 d-flex"> 
+                <div>
+                    <span data-link="visible{:~key != 'undefined'}" class="badge badge-subtle mr-2 badge-primary">{{:~key}}</span>
+                </div>
+                <div>
+                    {{for spList ~spList=spList}}
+                        <span class="badge badge-primary">{{formatCupNum:cup_num}}</span> <span>{{:name}}{{if #getIndex()+1 < ~spList.length}}<br>{{/if}}</span>
+                    {{/for}}
+                </div>
+            </div>
+            
+            <div class="col-2"> 
+                <div class="form-group">
+                    <input placeholder="Линия" id="{{:name}}{{:#getIndex()}}line" type="number" required class="form-control" data-link="line"> 
+                </div>
+            </div>
+            
+            <div class="col-2"> 
+                <div class="form-group">
+                    <input placeholder="Место" id="{{:name}}{{:#getIndex()}}place" type="number" class="form-control" data-link="place"> 
+                </div>
+            </div>
+            
+            <div class="col-2"> 
+                <div class="form-group">
+                    <input placeholder="Результат" id="{{:name}}{{:#getIndex()}}result" data-masked="##:00.000" class="form-control" data-link="{formatResult:result:}"> 
+                </div>
+            </div>
+            
+            <div class="col-1"> 
+                <button type="submit" class="btn btn-ligth"><i class="fa fa-floppy-o"></i></button>
+            </div>
+        </div>
+    </form>
+</div>
+</script>
+
+<script id="mdl_new" type="text/x-jsrender">
+<div class="form-group">
+    <select class="custom-select mb-2" data-link="result.ctg">
+        <option value="">-- Категория --</option>
+        {^{for data.ctgList}}
+            <option value="{{:id}}">{{:name}}</option>
+        {{/for}}
+    </select>
+    <select class="custom-select mb-2" data-link="{:result.age:} visible{:result.ctg != ''}">
+        <option value="">-- Возраст -- </option>
+        {^{for getAges(result.ctg, data.ctgList, ~S.clubStatus^aAge)}}
+            <option value="{{:alias}}">{{:name}}</option>
+        {{/for}}
+    </select> 
+    <select class="custom-select mb-2" data-link="result.race">
+        <option value="">-- Race --</option>
+        {^{for ~S.clubStatus^RaceRun}}
+            <option value="{{:id}}">{{:name}}</option>
+        {{/for}}
+    </select> 
+    <div data-link="visible{:calReady}" class="row mx-0">
+        <div class="input-group col-6">
+            <label class="input-group-prepend" for="calendar">
+                <span class="badge"><i class="fa fa-calendar"></i></span>
+            </label>
+            <input class="form-control"  type="text" id="calendar">
+        </div>
+        
+        <div class="input-group col-6">
+            <input class="form-control" size="5" placeholder="hh:mm" data-masked="00:00" data-link="result.time">
+        </div>
+    </div>
+    
+    <div data-link="visible{:!calReady}" class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+</script>
+
+<script id="mdl_choose" type="text/x-jsrender">
+{^{radiogroup resultGroup}}
+    {^{for rows sort='datestart'}}
+        <div class="border-bottom row py-2">
+            <label class="col-11" for="resrad{{:#getIndex()}}">
+                {{formatDateTime:datestart}} :: {{formatCtgName:ctg_name}} :: {{:ageName}} :: {{:race}}
+            </label>
+            <div class="col-1">
+                <div class="custom-control custom-radio">
+                    <input type="radio" class="custom-control-input" value="{{:#getIndex()}}" id="resrad{{:#getIndex()}}"> 
+                    <label class="custom-control-label" for="resrad{{:#getIndex()}}"></label>
+                </div>
+            </div>
+        </div>
+    {{/for}}
+{{/radiogroup}}
+</script>
+
+<script>
+$.views.converters({
+    formatResult: function(str) {
+        if (!str) return "";
+        str = str*1;
+        if (str >= 60) {
+            m = Math.floor(str/60);
+            str = (str - m*60);
+            if (m < 10 ) m = "0"+m;
+            if (str < 10 ) str = "0"+str;
+        }
+        else {
+            if (str<10) str = "0"+str;
+            m = "00";
+        }
+        
+        return `${m}:${str}`;
+    },
+    formatCupNum: function(str) {
+        if (str < 10) str = "00" + str;
+        else if (str < 100) str = "0" + str;
+        return str;
+    },
+    formatCtgName: function(str) {
+        return str.split(";")[1];
+    }
+})
+
+var refereeData = {
+    event: [[!dbdata?table=`idEvent` &rows=`1001` &_where=`id=[[!clubConfig?name=`aaa_event`]]`]].rows[0] || {},
+    last: ""
+};
+
+SCRM.link(refereeData, {ctgList: $.map([[!dbdata?table=`idEventCategory` &rows=`1001` &sidx=`name` &_where=`idevent=[[!clubConfig?name=`aaa_event`]]`]].rows, function(v){
+    v.extended = $.parseJSON(v.extended) || {};
+    return v;
+})});
+
+function load_calendar(mdlData, refereeData){
+    $('#calendar', mdlData.mdl)
+    .initDateEdit({
+        dateFormat: "Y-m-d",
+        minDate: refereeData.event.datestart,
+        maxDate: refereeData.event.dateend,
+        altInput: true,
+        altFormat: "d.m.Y",
+        defaultDate: refereeData.event.datestart,
+        onChange: function(selectedDates, dateStr, instance) {
+            SCRM.link(mdlData.result).setProperty("date", dateStr);
+        },
+        onOpen: function(selectedDates, dateStr, instance){
+            mdlData.mdl.removeAttr('tabindex');
+        },
+        onClose: function(selectedDates, dateStr, instance){
+            mdlData.mdl.attr('tabindex', -1);
+        },
+        onReady: function(){
+            SCRM.link(mdlData).setProperty("calReady", true);
+            SCRM.link(mdlData.result).setProperty("date", refereeData.event.datestart.split(" ")[0]);
+        }
+    });
+    $('[data-masked]', mdlData.mdl).initMaskEdit();
+}
+
+function getTeams(data){
+    var teamList = {
+        undefined: []
+    };
+    $.each(data.rows, function(k,v){
+        if (v.team) {
+            if (!teamList[v.team]) {
+                teamList[v.team] = {
+                    spList: [v],
+                    line: v.line || "",
+                    result: v.result || "",
+                    place: v.place || ""
+                    
+                };
+                if (v.resid) teamList[v.team].resid = [v.resid];
+            } else {
+                teamList[v.team].spList.push(v);
+                if (v.resid) teamList[v.team].resid.push(v.resid);
+            }
+        } else {
+            v = $.extend(v, {spList:[v]});
+            if (v.resid) v = $.extend(v, {resid: [v.resid]});
+            teamList.undefined.push( v );
+            
+        }
+    })
+    return teamList;
+}
+
+function isu2dec(str){
+    if (!str || typeof str === 'number') return str;
+    str = str.split('.').join('').split(':').join('')
+    if (str.length > 7) {
+        str = str.substr(0, 7);
+    }
+    if (str.length > 4) {
+        var i = str.substr(0, 2)*60,
+        s = str.substr(2, 2)*1,
+        u = str.substr(4);
+    } else if (str.length > 2) {
+        var i = str.substr(0, 2)*60,
+        s = str.substr(2, 2)*1,
+        u = '000';
+    } else {
+        var i = 0,
+        s = str.substr(0, 2)*1,
+        u = '000';
+    }
+    
+   return `${i+s}.${u}`*1;
+}
+
+$.link(true, "#resultManage", refereeData, {
+    newResult: function(){
+        var mdlData = {
+            body: "#mdl_new",
+            title: "Новый заезд",
+            data: refereeData,
+            result: {
+                time: "10:00",
+                ctg: "",
+                age: "",
+                race: 252,
+                date: ""
+            },
+            onOK: function(){
+                var time = mdlData.result.time.split(":").join(""),
+                h = time.substr(0,2),
+                m = time.substr(2,4);
+                if (time.length < 4 ||h*1 > 23|| m*1 > 59 ||!mdlData.result.date||!mdlData.result.ctg||!mdlData.result.age||!mdlData.result.race||!mdlData.result.time) SCRM.alert("Не все поля заполнены");
+                else {
+                    mdlData.result.time = `${h}:${m}`;
+                    pJSON("/hook/referee_result",  mdlData.result, function(data){
+                        SCRM.link(refereeData, {
+                            teams: getTeams(data),
+                            result: mdlData.result
+                        });
+                        $('[data-masked]').initMaskEdit();
+                    });
+                    mdlData.mdl_hide();
+                }
+            },
+            getAges: function(id, ctg, age){
+                SCRM.link(mdlData.result, {age: ""});
+                var ageKeys = {};
+                $.each(age, function(k,v){
+                    ageKeys[v.alias] = v;
+                });
+                
+                return $.map(ctg, function(v){
+                    if (v.id == id) {
+                        SCRM.link(mdlData.result, {
+                            ctgName: v.name,
+                            cnt: v.extended.cnt
+                        });
+                        return $.map(v.extended.age.split(';'), function(av){
+                            return ageKeys[av];
+                        });
+                    }
+                })
+            }
+        };
+        club_Modal(mdlData);
+        load_calendar(mdlData, refereeData);
+    },
+    saveResult: function(e, d){
+        e.preventDefault();
+        var res = d.linkCtx.data,
+        edit = {
+            place: res.place,
+            result: isu2dec(res.result),
+            line: res.line,
+            ideventcategory: refereeData.result.ctg,
+            sportage: refereeData.result.age,
+            table: 'idEventResult'
+        };
+        
+        if (res.spList.length > 1) {
+            var spIds = $.map(res.spList, function(v){
+                return v.sportsmen;
+            });
+            edit.sportsmen = spIds.join(',');
+        } else {
+            edit.sportsmen = res.spList[0].sportsmen;
+        }
+            
+        if (!res.resid) { //Новый заезд
+            edit = $.extend(edit, {
+                type: refereeData.result.race,
+                datestart: `${refereeData.result.date} ${refereeData.result.time}`,
+                oper: "add"
+            });
+            
+            if (res.spList.length > 1) {
+                edit.addmulti = 'sportsmen';
+            }
+            
+        } else { //Редактирование уже сущетвующего результата
+            edit.oper = "edit";
+            if (res.resid.length > 1) {
+                edit.id = $.map(res.resid, function(v){
+                    return v;
+                }).join(',');
+            } else {
+                edit.id = res.resid[0];
+            }
+        }
+        
+        pJSON("/hook/referee_result/save", edit, function(anws){
+            SCRM.success("Сохранено");
+            SCRM.link(res, {resid: anws.ids});
+            if (!refereeData.last) SCRM.link(refereeData, {last: anws.row});
+        });
+        
+        /*pEDIT("idEventResult", edit, function(anws){
+            SCRM.success("Сохранено");
+            SCRM.link(res, {resid: anws.ids});
+            if (!refereeData.last) SCRM.link(refereeData, {last: anws.row});
+        });*/
+    },
+    chooseResult: function(){
+        var mdlData = {
+            title: "Выбрать заезд",
+            body: "#mdl_choose",
+            onOK: function(){
+                mdlData.mdl_hide();
+                console.log(mdlData);
+                if (mdlData.resultGroup) {
+                    var selGr = mdlData.rows[mdlData.resultGroup];
+                    pJSON("/hook/referee_result", selGr, function(data){
+                        var cnt = 1;
+                        $.each(refereeData.ctgList, function(k,v){
+                            if (v.id == selGr.ideventcategory) {
+                                cnt =  v.extended.cnt;
+                                return false;
+                            };
+                        });
+                        SCRM.link(refereeData, {
+                            teams: getTeams(data),
+                            result: {
+                                ctg: selGr.ideventcategory,
+                                age: selGr.sportage,
+                                ctgName: selGr.ctg_name,
+                                date: selGr.datestart.split(" ")[0],
+                                time: selGr.datestart.split(" ")[1].split(":").splice(0,2).join(":"),
+                                cnt: cnt
+                            }
+                        });
+                        $('[data-masked]').initMaskEdit();
+                    });
+                }
+            },
+            loading: true
+        };
+        club_Modal(mdlData);
+        
+        pJSON("/hook/referee_result",  {
+            idEventResult: true
+        }, function(data){
+            SCRM.link(mdlData).setProperty({loading: false, rows: data.rows});
+        });
+    }
+});
+
+
+SCRM.setClubStatus([[!clubStatus?tbl=`aAge,RaceRun`]]);
+
+pDATA("idEventResult", {
+    _where: {
+        'idevent': refereeData.event.id,
+    },
+    sidx: 'created', sord: 'desc',
+    rows: 1
+}, function(lastResult){
+    SCRM.link(refereeData, {last: lastResult.rows[0]});
+    if (lastResult.rows.length){
+        pJSON("/hook/referee_result", {
+            datestart: refereeData.last.datestart,
+            ctg: refereeData.last.ideventcategory,
+            age: refereeData.last.sportage,
+            race: refereeData.last.type,
+        }, function(data){
+            var ctgName = "",
+            cnt = 1;
+            $.each(refereeData.ctgList, function(k,v){
+                if (v.id == refereeData.last.ideventcategory) {
+                    ctgName = v.name;
+                    cnt =  v.extended.cnt;
+                    return false;
+                }
+            });
+            SCRM.link(refereeData, {
+                teams: getTeams(data),
+                result: {
+                    ctg: refereeData.last.ideventcategory,
+                    age: refereeData.last.sportage,
+                    cnt: cnt,
+                    ctgName: ctgName,
+                    date: refereeData.last.datestart.split(" ")[0],
+                    time: refereeData.last.datestart.split(" ")[1].substr(0, 5)
+                }
+            });
+            $('[data-masked]').initMaskEdit();
+        });
+    }
+})
+</script>

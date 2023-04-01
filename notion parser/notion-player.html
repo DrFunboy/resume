@@ -1,0 +1,235 @@
+<style>
+    #notion-page .checkbox {
+        /* TODO: Проверить */
+        width: 16px;
+        height: 16px;
+    }
+</style>
+
+<script id="tpl_Notion" type="text/x-jsrender">
+<div id="notion-page" style="white-space: normal;">
+    <article id="{{:alias}}">
+        <h1 class="page-title">{{:name}}</h1>
+        {{props blocks ~alias=alias}}
+            {{notionBlock /}}
+            [[-{{if (prop.children && prop.type != 'column_list') }}
+                {{props prop.children}}{{notionBlock /}}{{/props}}
+            {{/if}}]]
+        {{/props}}
+    </article>
+</div>
+</script>
+
+<script>
+SCRM._service[ '[[+rq]]' ] = function( param ) {
+    var surl = 'https://scrm.website.yandexcloud.net/_help/';
+    param = $.extend({
+        alias: 'about',
+    }, param);
+    param.surl = surl + param.alias + '/';
+    
+    if (!param.container) {
+        alert('Empty HTML Target');
+        return;
+    }
+    SCRM.loadWSS(surl + 'style.css');
+
+    function makeText(rows) {
+        return $.map(rows, function(v, i) {
+            var html = v.plain_text;
+            
+            if (v.annotations.bold) html = '<b>' + html + '</b>';
+            if (v.annotations.italic) html = '<i>' + html + '</i>';
+            if (v.annotations.strikethrough) html = '<s>' + html + '</s>';
+            if (v.annotations.underline) html = '<u>' + html + '</u>';
+            if (v.annotations.code) html = '<code>' + html + '</code>';
+            if (v.annotations.color && v.annotations.color!='default') html = '<span class="highlight-' + v.annotations.color + '">' + html + '</span>';
+            if (v.href) html = '<a href="'+ v.href +'" target="_blank">' + html + '</a>';
+
+            return html;
+        }).join('');
+    }
+    
+    function makeIcon(icon) {
+        icon = icon || {};
+        if (icon.type == 'emoji') return icon.emoji;
+        if (icon.type == 'external') return '<img style="width:1.5em" class="icon" src="'+ icon.external.url +'">';
+        // file ??
+        return '';
+    }
+
+    $.views.tags({
+        notionText: {
+            contentCtx: true,
+            init: function(tagCtx) {
+                this.template = makeText(tagCtx.args[0]);
+            }
+        },
+        notionBlock: {
+            contentCtx: true,
+            init: function(tagCtx) {
+                var view = this.tagCtx.view||{},
+                    tag = view.data||{},
+                    prop = tag.prop||{},
+                    tprop = prop[prop.type]||{},
+                    html = null;
+
+                switch (prop.type) {
+                    case 'unsupported':
+                        return;
+                    case 'divider':
+                        html = '<hr>';
+                    break;
+                    case 'heading_1':
+                        html = '<h1>'+ makeText(tprop.rich_text) +'</h1>'
+                    break;
+                    case 'heading_2':
+                        html = '<h2>'+ makeText(tprop.rich_text) +'</h2>'
+                    break;
+                    case 'heading_3':
+                        html = '<h3>'+ makeText(tprop.rich_text) +'</h3>'
+                    break;
+                    case 'paragraph':
+                        var txt = makeText(tprop.rich_text);
+                        html = (prop.has_children)? '<div class="my-2">'+ txt +'</div>' : '<p>'+ txt +'</p>';
+                    break;
+                    
+                    case 'quote':
+                        html = '<blockquote>'+ makeText(tprop.rich_text) +'</blockquote>';
+                    break;
+                    case 'code':
+                        html = '<pre class="code" style1="white-space: nowrap;">'+ makeText(tprop.rich_text) +'</pre>'
+                    break;
+                    case 'bulleted_list_item':
+                        prop.has_children = false;
+                        html = '<ul class="bulleted-list"><li style="list-style-type:disc">'+ makeText(tprop.rich_text) +
+                            '{{props prop.children}}{{notionBlock /}}{{/props}}</li></ul>';
+                    break;
+                    case 'numbered_list_item':
+                        prop.has_children = false;
+                        html = '<ol class="numbered-list" start="'+ prop.ol_start +'"><li>'+ makeText(tprop.rich_text) +
+                            '{{props prop.children}}{{notionBlock /}}{{/props}}</li></ol>';
+                    break;
+                    
+
+                    case 'to_do':
+                        var ch = tprop.checked;
+                        html = '<ul class="to-do-list"><li>' +
+                            '<div class="checkbox '+ (ch? 'checkbox-on':'checkbox-off') +'"></div>' +
+                            '<span class="'+ (ch? 'to-do-children-checked':'to-do-children-unchecked') +'">'+ makeText(tprop.rich_text) +
+                            '</span></li></ul>';
+                    break;
+                    case 'video':
+                        var url = (tprop.external||{}).url;
+                        if (url) {
+                            html = '<figure><div class="source"><a href="'+ url +'">'+ url +'</a> \
+                                </div><figcaption>'+ makeText(tprop.caption) +'</figcaption></figure>';
+                        }
+                    break;
+                    case 'image':
+                        var itype = tprop.type; 
+                        var itprop = tprop[itype]||{};
+                        var url = (itype == 'external')? itprop.url : param.surl + prop.id + '.png';
+                        if (url) {
+                            html = '<figure class="image"><a href="'+ url +'" class="club-img">' +
+                            '<img style="width:1920px" src="'+ url +'">' +
+                            '</a><figcaption>'+ makeText(tprop.caption) +'</figcaption></figure>';
+                        }
+                    break;
+                    
+                    case 'callout':
+                        var itxt = makeIcon(tprop.icon);
+                        html = '<figure class="callout" style="display:flex">';
+                        if (itxt) html += '<div style="font-size:1.5em"><span class="icon">' + itxt + '</span></div>';
+                        html += '<div style="width:100%">'+ makeText(tprop.rich_text) +'</div></figure>';
+                    break;
+                    case 'link_to_page':
+                        //console.log(prop);
+                        var ext = prop.extended || {};
+                        var eprop = ext.properties || {};
+                        var eName = eprop.Name || {};
+                        var itxt = makeIcon(ext.icon);
+                        
+                        html = '<figure class="link-to-page"><a href="/kb/'+ ext.id +'" target="_blank">';
+                        if (itxt) html += itxt;
+                        html += makeText(eName.title) +'</a></figure>';
+                    break;
+
+                    case 'toggle':
+                        prop.has_children = false;
+                        html = '<ul class="toggle"><li><details open=""><summary>' + 
+                            makeText(tprop.rich_text) +
+                            '</summary>{{props prop.children}}{{notionBlock /}}{{/props}}</details></li></ul>';
+                    break;
+                    case 'column_list':
+                        prop.has_children = false;
+                        html = '<div class="row column-list1">{{props prop.children}}{{notionBlock /}}{{/props}}</div>';
+                    break;
+                    case 'column':
+                        html = '<div style1="width:{{:~width}}%" class="column1 col-sm"></div>';
+                    break;
+                    case 'table_of_contents':
+                        var last = 1, prev = '';
+                        html = $.map(view.root.data.blocks, function(v, i) {
+                            if (!in_array(v.type, ['heading_1', 'heading_2', 'heading_3'])) return;
+                            if (v.type == 'heading_1') {
+                                last = 1;
+                            }
+                            if (v.type == 'heading_2') {
+                                if (prev == 'heading_1') last++;
+                                if (prev == 'heading_3') last--;
+                            }
+                            if (v.type == 'heading_3') {
+                                if (prev == 'heading_1') last++;
+                                if (prev == 'heading_2') last++;
+                            }
+                            prev = v.type;
+                            return '<div class="table_of_contents-item table_of_contents-indent-'+ (last||1) +'"> \
+                                <a class="table_of_contents-link" href="#'+ v.id +'">'+ makeText(v[v.type].rich_text) +'</a></div>';
+                        }).join('');
+
+                        if (html) html = '<nav>'+ html +'</nav>';
+                    break;
+                    
+                    default:
+                        console.log(prop);
+                }
+                if (prop.children) {
+                    console.log(prop);
+                }
+                
+                if (html) {
+                    var el = $(html).attr('id', tag.key);
+                    if (tprop.color) el.addClass('block-color-' + tprop.color);
+                    if (prop.has_children) el.append('<div class="indented">{{props prop.children}}{{notionBlock /}}{{/props}}</div>');
+                    
+                    this.template = el.prop('outerHTML');
+                }
+                // else this.template = '#tpl_NotionBlock';
+            }
+        }
+    });
+    
+    function makeOL(rows) {
+        var prev_type = '',
+            ol_start = 1;
+        
+        $.each(rows, function(i, v){
+            if (v.type == 'numbered_list_item') {
+                ol_start = (prev_type == 'numbered_list_item')? ol_start+1 : 1;
+                v.ol_start = ol_start;
+            }
+            prev_type = v.type;
+            if (v.children) makeOL(v.children);
+        });
+    }
+    
+    $.getJSON(param.surl + 'index.json', function(data){
+        //console.log(data);
+        $.extend(param, data);
+        makeOL(param.blocks);
+        param.container.html( $.templates('#tpl_Notion').render(param) );
+    });
+};
+</script>
+

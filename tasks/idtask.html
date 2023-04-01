@@ -1,0 +1,804 @@
+<style>
+    .publisher-alt.task-recreate {
+        border-color: #346cb0;
+        box-shadow: 0 0 0 1px #346cb0;
+    }
+    .publisher.task-recreate {
+        display: flex;
+        flex-direction: column;
+    }
+    .publisher-alt.task-recreate .publisher-actions {
+        display: flex;
+    }
+    .publisher-alt.task-recreate .publisher-input {
+        margin-top: 0;
+    }
+
+    .publisher.task-recreate .publisher-input {
+        margin-bottom: 0.5em;
+        padding-right: 0;
+        width: 100%;
+    }
+    .publisher.task-recreate .publisher-input, .publisher.task-recreate .publisher-label, .publisher.task-recreate .publisher-tools {
+        display: block;
+    }
+    .btn-realLink {
+        background: none!important;
+        border: none;
+        padding: 0!important;
+        cursor: pointer;
+    }
+    .btn-realLink:hover {
+        text-decoration: underline;
+    }
+</style>
+
+<a href="#" id="taskNav" class="nav-item nav-link prevent-default" data-link="{on ~showTab}">
+    <i class="fa fa-tasks"></i>
+    <sup data-link="visible{:undone > 0} text{:undone}" class="badge badge-warning" style="top: -1em;font-size: 50%;padding: 0.1rem 0.15rem;"></sup>
+</a>
+
+<script id="tab_task" type="text/x-jsrender">
+<button type="button" class="btn btn-primary btn-floated" data-link="{on ~S._task.addTask}">
+    <i class="fa fa-plus"></i>
+</button>
+<div class="card">
+    <div class="nav nav-pills card-body" role="tablist">
+        <button class="btn btn-success btn-xs mr-2" data-link="{on ~S._task.addTask}"><i class="fa fa-plus px-1"></i></button>
+        <a class="nav-item nav-link active" data-toggle="tab" href="#tab_taskUncomplete">Активные</a>
+        <a class="nav-item nav-link" data-toggle="tab" href="#tab_taskComplete">Закрытые</a>
+    </div>
+
+    <div class="tab-content">
+        <div id="tab_taskUncomplete" class="tab-pane active" data-link="{include tmpl='#tpl_taskUL'}"></div>
+
+        <div id="tab_taskComplete" class="tab-pane px-3 pb-3">
+            <table id="grTaskCompl" data-entity="idTask"></table>
+            <pre class="mb-0" data-link="visible{:log}"><code class="language-json Tomorrow" data-link="text{:log}"></code></pre>
+        </div>
+    </div>
+</div>
+</script>
+
+<script id="tpl_taskUL" type="text/x-jsrender">
+{^{if notempty == 1 }}
+    {^{for rows sort='menuindex' ~keys=~S._task.typeKeys}}
+        {^{for rows ~color=extended.color sort="duedate" }}
+    	    <div class="p-3 border-top ">{{include tmpl="#tpl_taskBlock" ~ico=~keys[type].ico /}} </div>
+        {{/for}}
+    {{/for}}
+{{else}}
+    <ul class="dd-list">
+    {^{for rows sort='menuindex' ~keys=~S._task.typeKeys}}
+        <li class="dd-item" data-id="4" data-link="visible{:rows}">
+    		<div class="dd-handle">
+        		<button class="btn btn-reset" data-link="aria-expanded{:extended.show}" data-toggle="collapse" data-target="#taskGroup{{:alias}}">
+                    <span class="collapse-indicator mr-2">
+                        <i class="fa fa-fw fa-caret-right"></i>
+                    </span>
+                    <span data-link="class{:extended.color? 'mr-2 badge badge-'+extended.color:'mr-2 badge badge-primary'}">{^{:rows.length}}</span>
+                    <span>{{:name}}</span>
+                </button>
+        	</div>
+
+        	<div class="collapse" id="taskGroup{{:alias}}" data-link="class{merge:extended.show toggle='show'}">
+        	{^{for rows ~color=extended.color sort="duedate" }}
+        	    <div class="p-3 border-top ">{{include tmpl="#tpl_taskBlock" ~ico=~keys[type].ico /}} </div>
+        	{{else}}
+    		    <div class="text-center p-2">
+    		        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+    		    </div>
+		    {{/for}}
+        	</div>
+    	</li>
+    {{/for}}
+    </ul>
+{{/if}}
+</script>
+
+<script id="tpl_taskForm" type="text/x-jsrender">
+<div class="publisher publisher-alt">
+    <div class="publisher-actions pl-2" style="flex-wrap: wrap;">
+        <span class="my-1 mr-2">
+            <a href="#" class="text-black" data-alias="type" data-aliastext="texttype" data-link="text{:texttype} {on ~buildPop}"></a>
+        </span>
+
+        {^{if tmpl tmpl=tmpl /}}
+    </div>
+    <div class="publisher-input">
+        <textarea class="form-control pl-2 h-by-content" data-link="{:info:} placeholder{:placeholder||'Новая задача'}"></textarea>
+    </div>
+
+    <div class="publisher-actions mb-2 ml-1" data-link="class{merge:!info && !id toggle='d-none'}">
+        <div class="ml-auto">
+            <button class="btn btn-light" data-link="{on ~closeForm}">Отмена</button>
+            <button class="btn btn-primary ml-2" data-link="{on ~saveTask} text{:mode=='result'? 'Выполнить':'Сохранить'}">Сохранить</button>
+        </div>
+    </div>
+</div>
+</script>
+
+<script id="tpl_publisherHeader_default" type="text/x-jsrender">
+<span class="my-1 mr-2">
+    <button class="btn-realLink text-black" data-alias="duedate" data-link="{on 'click' ~editDate}">{^{if allday}}{^{formatDate:duedate}}{{else}}{^{formatDateTime:duedate}}{{/if}}</button>
+</span>
+
+<div class="align-items-center d-flex">
+    <button class="btn btn-light btn-sm mr-2" data-link="{on ~toggleVar 'notify'}">
+        <i data-link="class{:notify? 'fa fa-bell-o':'fa fa-bell-slash-o'}"></i>
+    </button>
+
+    <span class="my-1 mr-2" data-link="visible{:notify}">
+        <a href="#"class="link-text" data-link="{on 'click' ~editNotify}">{^{:notifyInt}} {^{:notifyType}}</a>
+    </span>
+</div>
+
+<span class="my-1 mr-2">
+    <a href="#" class="text-black" data-alias="assignedto" data-aliastext="assignedto_name" data-link="text{:assignedto_name} {on ~buildPop}"></a>
+</span>
+</script>
+
+<script id="tpl_notifyPopover" type="text/x-jsrender">
+<div class="d-flex">
+    <div class="w-25 mr-1">
+        <div class="custom-number">
+            <input class="form-control" style="padding: 0.375rem 0.75rem;" type="number" step="1" data-link="notifyInt">
+        </div>
+    </div>
+    <div class="w-75">
+        <select class="custom-select" data-link="notifyType">
+            {{for lists.notifyTypes}}
+                <option>{{:name}}</option>
+            {{/for}}
+        </select>
+    </div>
+</div>
+</script>
+
+<script id="tpl_taskBlock" type="text/x-jsrender">
+<div class="taskBlock" id="taskBlock{{:id}}">
+	<div class="d-flex align-items-center">
+    	<div data-link="{on 'click' ~S._task.addResult}">
+    	    {{include tmpl="#tpl_taskBlockHeader"/}}
+    	</div>
+
+        <span class="dropdown ml-auto">
+            <button class="btn btn-sm btn-icon btn-light" data-toggle="dropdown">
+                <i class="fa fa-fw fa-ellipsis-v"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+                <div class="dropdown-arrow"></div>
+                {{if dateend}}
+                <button class="dropdown-item" data-link="{on ~S._task.addResult}">
+                    Результат</button>
+                {{else}}
+                <button class="dropdown-item" data-link="{on ~S._task.editTask}">
+                    Редактировать</button>
+                {{/if}}
+                <div class="dropdown-divider"></div>
+                <div class="d-flex small px-2">
+                <a href="#" class="d-block text-muted ml-auto fmtCreated stop-propagation"
+                    data-link="data-id{:id} text{formatDate:created}" data-tbl="idTask"></a>
+                </div>
+            </div>
+        </span>
+	</div>
+
+	<div data-link="{on 'click' ~S._task.addResult}">
+	    {{if !dateend}}
+        	<div class="mt-2" style="white-space: pre-wrap;">{{:info}}</div>
+        {{else}}
+        	<div class="mt-2" style="white-space: pre-wrap;"><s>{{:info}}</s></div>
+            <div class="mt-2" style="white-space: pre-wrap;">{{:result}}</div>
+        {{/if}}
+	</div>
+</div>
+</script>
+
+<script id="tpl_taskBlockHeader" type="text/x-jsrender">
+<span data-link="class{:~color? 'mr-1 badge badge-'+~color:'mr-1 badge badge-primary'}">
+    <i class="fa {{:~ico}}"></i>
+    {^{if allday}} {{formatDate:duedate}}
+    {{else}} {{formatDateTime:duedate}}
+    {{/if}}
+</span>
+
+<span class="badge badge-subtle badge-primary mr-1">
+    <i class="fa fa-user"></i>
+    {{:assignedto_name}}
+</span>
+
+<span data-link="visible{:parent_name} data-sportsmen{:tbl == 'idSportsmen'? skey:''}" class="badge badge-subtle badge-primary">
+    <i data-link="class{:tbl == 'idLead'? 'fa '+~S._task.leadIco: 'fa fa-futbol-o'}" ></i>
+    {{:parent_name}}
+</span>
+</script>
+
+<script id="tpl_taskResult" type="text/x-jsrender">
+<div class="publisher publisher-alt flex-column" data-link="class{merge:recreate toggle='task-recreate'}">
+    <div class="publisher-actions" data-link="visible{:recreate}">
+        <div class="d-flex" style="flex-wrap: wrap;">
+            <div class="align-items-center d-flex">
+                <button class="my-1 ml-1 mr-1 btn btn-subtle-primary  btn-sm" data-link="{on ~toggleVar 'recreate'}">
+                    <i class="fa fa-share"></i>
+                </button>
+                <span class="my-1 ml-1 mr-1">
+                    <button class="btn-realLink text-black" data-alias="duedate" data-link="{on 'click' ~editDate}">{^{if allday}}{^{formatDate:duedate}}{{else}}{^{formatDateTime:duedate}}{{/if}}</button>
+                </span>
+            </div>
+            <div class="align-items-center d-flex">
+                <button class="my-1 ml-1 mr-1 btn btn-light btn-sm" data-link="{on ~toggleVar 'notify'}">
+                    <i data-link="class{:notify? 'fa fa-bell-o':'fa fa-bell-slash-o'}"></i>
+                </button>
+                <span class="my-1 ml-1 mr-1" data-link="visible{:notify}">
+                    <a href="#"class="link-text dashed" data-link="{on 'click' ~editNotify}">{^{:notifyInt}} {^{:notifyType}}</a>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="publisher-input d-flex m-0">
+        <button class="my-1 ml-1 btn btn-subtle-dark btn-sm" data-link="{on ~toggleVar 'recreate'} visible{:!recreate}">
+            <i class="fa fa-share"></i>
+        </button>
+        <textarea rows="1" class="form-control h-by-content" data-link="{:result:} placeholder{:recreate? 'Комментарий':'Результат'}" =""></textarea>
+    </div>
+    <div class="publisher-actions mb-2 ml-1" data-link="class{merge:!result && !recreate toggle='d-none'}">
+        <div class="ml-auto">
+            <button class="btn btn-light" data-link="{on ~closeForm}">Отмена</button>
+            <button class="btn btn-primary ml-2" data-link="{on ~saveTask} text{:recreate? 'Перенести':'Выполнить'}"></button>
+        </div>
+    </div>
+</div>
+</script>
+
+<script id="tpl_spCardTasks" type="text/x-jsrender">
+    <div class="card">
+        <div class="card-body">
+            <button class="btn btn-success btn-sm mr-2" data-link="{on ~S._task.addTask}"><i class="fa fa-plus"></i></button>
+        </div>
+
+        {{include tmpl='#tpl_taskUL' /}}
+    </div>
+</script>
+
+<script>
+SCRM.wssRes['highlight'] = [
+    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js'
+];
+
+$("body")
+.on("input", ".h-by-content", function(){
+    var elm = $(this);
+    var starth = elm.height();
+
+    elm.height('auto');
+    if (!elm.val()) elm.height("");
+    else elm.height(this.scrollHeight + 'px');
+})
+.on("DOMNodeInserted", function (e) {
+    var elm = $(e.target).find(".h-by-content");
+    if (elm[0]){
+        setTimeout(function(){
+            var starth = elm.height();
+            elm.height("auto");
+            if (!elm.val()) elm.height("");
+            else elm.height(elm[0].scrollHeight + 'px');
+        }, 100)
+    }
+});
+
+(function() {
+    SCRM.setClubStatus([[!clubStatus?tbl=`idTask,idLead`]]);
+    
+    SCRM._task = {
+        mainType: `[[!clubConfig?name=`idTask_main`]]` || SCRM.clubStatus.idTask[0].id,
+        typeKeys: {},
+        lists: {
+            type: SCRM.clubStatus.idTask,
+            notifyTypes: [
+                {
+                    name: "мин.",
+                    multi: 60,
+                    limit: 60
+                },
+                {
+                    name: "ч.",
+                    multi: 60*60,
+                    limit: 24
+                },
+                {
+                    name: "дн.",
+                    multi: 60*60*24
+                }
+            ]
+        },
+        addTask: function(e,d){
+            var data = d.linkCtx.data,
+            extformdata = formatTask($.extend({
+                onSave: function(){
+                    loadTask();
+                },
+                onClose: function(){
+                    taskMdl.mdl_hide();
+                }
+            }, {
+                onSave: data.onSave,
+                onClose: data.onClose,
+                onBeforeSave: data.onBeforeSave,
+                parent: data.parent,
+                tbl: data.tbl,
+            }) ),
+            taskMdl = {
+                title: "Добавить задачу",
+                body: `<div class="w-100" id="taskFormLZ"></div>`
+            };
+
+            var addTaskMdl = club_Modal(taskMdl)
+            .removeAttr('tabindex')
+            .on('shown.bs.modal', function(e){
+                linkTaskForm(extformdata, $("#taskFormLZ"));
+            })
+
+        },
+        addResult: function(e, d){
+            var data = d.linkCtx.data,
+            extformdata = formatTask($.extend({
+                onSave: function(){
+                    loadTask();
+                },
+                onClose: function(){
+                    $("#task"+this.id).remove();
+                },
+                mode: "result"
+            }, data) ),
+            block = $("#taskBlock"+extformdata.id),
+            blockid = "task"+extformdata.id;
+            
+            if ( !extformdata.dateend && !block.find("#"+blockid).length) {
+                var ndd = new Date(extformdata.duedate);
+                ndd.setTime(ndd.getTime()+24*60*60*1000);
+                extformdata.duedate = str2date(ndd, "sqlt");
+                
+                block.append(`<div class="mt-1" id="${blockid}"></div>`);
+                linkTaskForm(extformdata, $("#"+blockid));
+            }
+        },
+        editTask: function(e,d){
+            var data = d.linkCtx.data,
+            extformdata = formatTask($.extend({
+                onSave: function(){
+                    loadTask();
+                },
+                onClose: function(){
+                    taskMdl.mdl_hide();
+                }
+            }, data) ),
+            taskMdl = {
+                title: "Редактировать задачу",
+                body: `<div class="w-100" id="taskFormLZ"></div>`
+            };
+            
+            club_Modal(taskMdl)
+            .removeAttr('tabindex')
+            .on('shown.bs.modal', function(e, mdl){
+                $("#taskFormLZ").on()
+                linkTaskForm(extformdata, $("#taskFormLZ"));
+            })
+            
+        }
+    };
+    
+    $.each(SCRM.clubStatus.idLead, function(k,v){
+        if (v.alias == `[[!clubConfig?name=`idLead_main`]]`) {
+            SCRM._task.leadIco = v.ico
+            return false;
+        }
+    })
+    $.each(SCRM.clubStatus.idTask, function(k,v){
+        SCRM._task.typeKeys[v.id] = v;
+    })
+    
+    function formatTask(data = {}){
+        var tomorrow = new Date();
+        tomorrow.setTime(tomorrow.getTime() + (24*60*60*1000));
+        tomorrow = str2date(tomorrow, "sql");
+        var update = $.extend({
+            duedate: tomorrow,
+            type: SCRM._task.mainType,
+            tmpl: "#tpl_publisherHeader_default",
+            notifyType: "мин.",
+            notifyInt: 15,
+            lists: JSON.parse(JSON.stringify(SCRM._task.lists)),
+            notify: false,
+            assignedto: SCRM.app.user.id,
+            assignedto_name: SCRM.app.user.fullname
+        }, data);
+        update.texttype = SCRM._task.typeKeys[update.type].name;
+        
+        var dueParts = update.duedate.split(" ");
+        if (!dueParts[1] || dueParts[1] == "23:59:59") {
+            update.duedate = dueParts[0] + " 23:59:59";
+            update.allday = true;
+        }
+        
+        var ntfList = $.extend([], update.lists.notifyTypes);
+        ntfList.sort((a, b) => a.multi < b.multi ? 1 : -1);
+        if (update.notifydate) {
+            update.notify = true;
+            var secdiff = (new Date(update.duedate).getTime() - new Date(update.notifydate).getTime()) / 1000;
+            $.each(ntfList, function(k,v){
+                if ( (secdiff/v.multi) % 1 == 0 ){
+                    update.notifyInt = secdiff/v.multi;
+                    update.notifyType = v.name;
+                    return false;
+                }
+            })
+        }
+        return update;
+    }
+    function loadTask(where = {}, callback){
+        pJSON("/hook/task",{
+           _where: where 
+        }, function(data){
+            var undone = 0,
+            notempty = 0;
+            $.each(data, function(typek, typev){
+                if (typev.rows) notempty++;
+                if (typev.extended.show && typev.rows) undone += typev.rows.length;
+                $.each(typev.rows, function(k, v){
+                    data[typek].rows[k] = formatTask(v);
+                })
+            })
+
+            if (callback) callback({
+                undone: undone,
+                notempty: notempty,
+                rows: data
+            });
+            else {
+                SCRM.link(SCRM._task, {
+                    undone: undone,
+                    notempty: notempty,
+                    rows: data
+                });
+            }
+        })
+    }
+    function pTask(data, oper, callback){
+        if (data.allday) data.duedate = data.duedate.substr(0, 10)+" 23:59:59";
+        var editData = {
+            type: data.type,
+            assignedto: data.assignedto,
+            info: data.info,
+            duedate: data.duedate,
+            parent: data.parent,
+            tbl: data.tbl,
+            previous: data.previous
+        },
+        log = data.log||{};
+
+        if (oper == "add") editData.oper = oper;
+        if (oper == "complete" || oper == "edit") editData.id = data.id;
+        if (data.notify) {
+            var nottype;
+            $.each(SCRM._task.lists.notifyTypes,function(k,v){
+               if (data.notifyType == v.name) nottype = v;
+            });
+            if (data.allday) editData.notifydate = data.duedate.substr(0, 10)+"T10:00";
+            else editData.notifydate = str2date(new Date((new Date(data.duedate).getTime() - data.notifyInt*nottype.multi*1000)), "sqlt");
+        } else {
+            editData.notifydate = null;
+        }
+        
+
+        var now = str2date("now","sqlt");
+        if (oper == "complete") {
+            editData.result = data.result;
+            editData.dateend = now;
+        }
+        log[now] = $.extend({oper: oper}, editData);
+
+        pEDIT("idTask", $.extend({
+            log: log
+        }, editData), function(data){
+            if (callback) callback();
+        })
+    }
+    function linkTaskForm(data, selector){
+        var tmpl = data.mode == "result"? "#tpl_taskResult":"#tpl_taskForm";
+        var linked = $.templates(tmpl).link(selector, data, {
+            closeForm: () => { if (data.onClose) data.onClose(data) },
+            toggleVar: (variable, e, d) => { SCRM.link(data, variable, !data[variable]) },
+            saveTask: function(e, d){
+                if (data.onBeforeSave) data.onBeforeSave(data);
+                if (!data.skipsave) {
+                    if (data.mode == "result"){
+                        data.previous = data.id;
+                        pTask(data, "complete", function(){
+                            if (data.recreate) {
+                                data.previous = data.id;
+                                pTask(data, "add", () => { if (data.onSave) data.onSave() });
+                            } else {
+                               if (data.onSave) data.onSave();
+                            }
+                        });
+                    } else if (data.id) {
+                        pTask(data, "edit", () => { if (data.onSave) data.onSave() });
+                    } else {
+                        pTask(data, "add", () => { if (data.onSave) data.onSave() });
+                    }
+                } else if (data.onSave) data.onSave();
+                
+                linked.view().ctx.closeForm();
+            },
+            editNotify: function(e, d){
+                e.preventDefault();
+                var template = $.templates("#tpl_notifyPopover"),
+                lnk = $(e.target);
+                var pop = clubOnPopover(lnk, `<div id="notifyPopBody"></div>`)
+                .on('click', function(e){
+                    e.stopPropagation();
+                })
+                template.link("#notifyPopBody", data);
+            },
+            buildPop: function(e, d){
+                e.preventDefault();
+                var lnk = $(e.target),
+                alias = lnk.data("alias"),
+                aliastext = lnk.data("aliastext");
+                
+                function linkInData() {
+                    var html = $.map(data.lists[alias], function(v){
+                        if (v.extended && v.extended.hidden) return;
+                        var cls = data[alias] == v.id? "text-primary":"",
+                        ico = v.ico? `<div class="list-group-item-figure ${cls}"><i class="fa ${v.ico}"></i></div>` : '';
+                        return `<a href="#" class="list-group-item list-group-item-action">${ico}<div data-value="${v.id}" class="list-group-item-body ${cls}">${v.name}</div></a>`;
+                    }).join(" ");
+                    var pop = clubOnPopover(lnk, '<div class="list-group list-group-divider dropdown-max">'+html+'</div>')
+                    .on('click', 'a', function(e){
+                        e.preventDefault();
+                        e.stopPropagation();
+                        SCRM.link(data, alias, $(e.target).data("value"));
+                        if (aliastext) SCRM.link(data, aliastext, $(e.target).text());
+                        
+                        if (alias == "type"){
+                            var tmpl = "#tpl_publisherHeader_default",
+                            placeholder;
+                            
+                            $.each(SCRM._task.lists[alias], function(k,v){
+                                if (v.id == data[alias] && v.extended) {
+                                    placeholder = v.extended.placeholder
+                                    tmpl = v.extended.tmpl || tmpl;
+                                    return false;
+                                }
+                            })
+                            
+                            SCRM.link(data, {
+                                tmpl: tmpl,
+                                placeholder: placeholder
+                            });
+                        }
+                        
+                        lnk.popover('dispose');
+                    })
+                    .find('.popover-body').addClass('p-0');
+                };
+                
+                if (alias == "assignedto" && !data.lists.assignedto) {
+                    pJSON("/hook/task", {mode: "getUsers"}, function(users){
+                        SCRM.link(data.lists, "assignedto", users.rows);
+                        linkInData();
+                    })
+                } else {
+                    linkInData();
+                }
+            },
+            editDate: function(e, d){
+                e.preventDefault();
+                var elm = $(e.target);
+                SCRM.loadWSS('flatpickr', function(){
+                    flatpickr(elm, {
+                        enableTime: true,
+                        disableMobile: true,
+                        onChange: function(selectedDates, dateStr, instance){
+                            SCRM.link(data, "duedate", instance.formatDate(selectedDates[0], 'Y-m-d H:i:S' ));
+                        },
+                        onClose: function(selectedDates, dateStr, instance){
+                            instance.destroy();
+                            elm.closest(".publisher").addClass("focus").removeClass("keep-focus");
+                        },
+                        onOpen: function(selectedDates, dateStr, instance){
+                            elm.closest(".publisher").addClass("keep-focus");
+                            var flttime = $(instance.calendarContainer).find(".flatpickr-time");
+                            SCRM.disableFpTime = function(toggle){
+                                if (toggle) {
+                                    SCRM.link(data, "allday", !data.allday);
+                                }
+
+                                $("#fpAllday").prop('checked', data.allday);
+                                if (data.allday) {
+                                    var newDue = data.duedate.split(" ")[0]+" 23:59:59";
+                                    instance.setDate(newDue, false, "Y-m-d H:i:s");
+                                    instance.set("dateFormat", SCRM.dateFormat);
+                                    flttime.find(".numInput").attr("disabled", true).addClass("text-muted")
+                                    flttime.find(".arrowUp, .arrowDown").addClass("d-none")
+                                } else {
+                                    var newDue = toggle? data.duedate.split(" ")[0]+" 10:00":data.duedate;
+                                    instance.setDate(newDue, false, "Y-m-d H:i:s");
+                                    instance.set("dateFormat", SCRM.datetimeFormat);
+                                    flttime.find(".numInput").removeAttr("disabled").removeClass("text-muted")
+                                    flttime.find(".arrowUp, .arrowDown").removeClass("d-none")
+                                }
+                                if (toggle) SCRM.link(data, "duedate", newDue);
+                            }
+
+                            var alldayBtn = `
+                            <div class="custom-control pt-2 custom-control-inline custom-control-nolabel custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="fpAllday" onchange="SCRM.disableFpTime(true)">
+                                <label class="custom-control-label" for="fpAllday"></label>
+                            </div>`;
+                            flttime.prepend(alldayBtn);
+                            SCRM.disableFpTime();
+                            
+                            $(instance.calendarContainer).find(".flatpickr-innerContainer").after('<div id="fpDateInp"></div>');
+                            var dateinp = `
+                            <div class="flatpickr-time">
+                                <div class="numInputWrapper" >
+                                    <input class="numInput" data-link="value{formatDate:duedate} {on 'keydown' ~syncDuedate}">
+                                </div>
+                            </div>`;
+
+                            var template = $.templates(dateinp);
+                            template.link("#fpDateInp", data, {
+                                syncDuedate: function(e,d){
+                                    e.stopPropagation();
+                                    clearTimeout(this.timeoutID);
+                                    this.timeoutID = setTimeout(function(){
+                                        var value = $(e.target).val(),
+                                        due1 = instance.formatDate(instance.parseDate(value, SCRM.dateFormat), 'Y-m-d' );
+                                        due1 = due1+" "+data.duedate.split(" ")[1];
+                                        SCRM.link(data, "duedate", due1);
+                                        instance.setDate(due1, false, "Y-m-d H:i:s");
+                                    }, 700);
+                                }
+                            });
+                        }
+                    }).open();
+                });
+            },
+        })
+        .find(".publisher.publisher-alt").addClass("focus active");
+    }
+    
+    SCRM._task.loadTask = loadTask;
+    SCRM._task.formatTask = formatTask;
+    SCRM._task.linkTaskForm = linkTaskForm;
+    loadTask();
+    
+    $("#taskNav")
+    .insertBefore('#scrmHelpMenu')
+    .link(true, SCRM._task, {
+        showTab: function(e){
+            if (!SCRM._task.page) {
+                $(document)
+                .on('shown.bs.tab', 'a[href="#tab_taskContainer"]', function(e){
+                    loadTask();
+                })
+
+                SCRM._task.page = club_Tab($.extend(SCRM._task, {
+                    title: 'Задачи',
+                    body: '#tab_task',
+                    tab_id: "tab_taskContainer"
+                }));
+
+                $(document)
+                .one('shown.bs.tab', 'a[href="#tab_taskComplete"]', function(e){
+                    load_wss(['grid'], function(){
+                        $('#grTaskCompl')
+                        .jqGridInit({
+                            sortname: 'dateend', sortorder: 'asc',
+                            colModel:[
+                                {name:'id', hidden: true, template: idFieldTemplate},
+                                {
+                                    name:'type',
+                                    label:"Тип",
+                                    editable: false,
+                                    template: selTemplate,
+                                    clubStatus: 'idTask', 
+                                    lookupKey: 'id',
+                                    searchoptions: {
+                                        value: makeGridOpts(SCRM.clubStatus.idTask, {add_all: true}),
+                                    }
+                                },
+                                {name:'assignedto_name', label: 'Ответственный'},
+                                {name:'parent_name', label: 'Сущность',
+                                    formatter: function(cv, options, row) {
+                                        var dataCard = '';
+                                        if (row.parent_key) {
+                                            if (row.tbl == "idSportsmen") {
+                                                return `<a class="prevent-default" href="#" data-sportsmen="${row.parent_key}">${cv || ""}</a>`;
+                                            } else {
+                                                return `<a target="_blank" href="/sportsmens/candidate.html?key=${row.parent_key}">${cv || ""}</a>`;
+                                            };
+                                        } else {
+                                            return '';
+                                        }
+                                    },
+                                },
+                                //{name:'tbl', label: 'Таблица', width:100},
+                                {name:'created', label:'Создано', template: dateTimeTemplate,
+                                    formatter: function(cv, options, row) {
+                                        console.log(cv, options, row);
+                                        return `<a href="#" data-log="${options.rowId}">${cv}</a>`;
+                                    },
+                                },
+                                {name:'dateend', label:'Закрыто', template: dateTimeTemplate},
+                                {name:'result', label: 'Результат', template: infoTemplate},
+                                {name:'duedate', template: dateTimeTemplate},
+                                
+                                {name:'info', label: 'Описание', template: infoTemplate},
+                                {name:'log', label: 'log', hidden:true, template: infoTemplate},
+                            ],
+                            navOpts: {add: false, edit: false, del: false},
+                        })
+                        .jqGrid('filterToolbar')
+                        .jqGridColumns();
+                    })
+                })
+            } else {
+                SCRM._task.page.tab.tab('show')
+            }
+        }
+    })
+})();
+
+$(document)
+.one('OnLoadSpData', function(e, clubSpCard){
+    var sportsmenTasks = {
+        id: "spCardTasks",
+        tpl: "#tpl_spCardTasks",
+        name: "Задачи",
+        parent: clubSpCard.sp.id,
+        tbl: "idSportsmen",
+        onSave: loadSpTask
+    }
+    $.observable(clubSpCard.addMenu).insert(sportsmenTasks);
+
+    function loadSpTask(){
+        SCRM._task.loadTask({
+            parent: clubSpCard.sp.id,
+            tbl: 'idSportsmen'
+        }, function(taskData){
+            $.each(taskData.rows, function(k,v){
+                $.each(v.rows, function(rk, rv){
+                    rv.onSave = loadSpTask;
+                });
+            })
+            
+            SCRM.link(sportsmenTasks, taskData);
+        });
+    }
+
+    $('a[href="#spCardTasks"]')
+    .addClass('calculate')
+    .on('calculate', function(e) {
+        loadSpTask();
+    })
+})
+.on('click', "[data-log]", function(e){
+    e.preventDefault();
+    var row = $('#grTaskCompl').getRowData($(e.target).data("log")),
+    log = JSON.stringify(JSON.parse(row.log), null, "\t");
+    if (log != SCRM._task.log) {
+        SCRM.loadWSS('highlight', function(e){
+            SCRM.link(SCRM._task, {log: log});
+            hljs.highlightAll();
+        });
+    }
+    
+})
+</script>

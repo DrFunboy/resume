@@ -1,0 +1,419 @@
+[[-<style>
+    .btn-input-group{
+        border: 1px solid #c6c9d5;
+    }
+    .input-group-append .btn-input-group {
+        border-left: unset;
+    }
+    .input-group-prepend .btn-input-group {
+        border-right: unset;
+    }
+</style>]]
+
+
+<script id="eCardFields" type="text/x-jsrender">
+{{if popmenu == 'href'}}
+    <a href="#" data-popmenu="href" data-link="text{:value} href{:value} {on 'onInitPopMenu' ~S.addEditPopMenu} {on 'roinplace' ~eCardSave}"></a>
+{{else popmenu}}
+    <a href="#" data-popmenu="{{:popmenu}}" data-link="text{:value} {on 'onInitPopMenu' ~S.addEditPopMenu} {on 'roinplace' ~eCardSave}"></a>
+
+{{else type == 'checkbox'}}
+    {{if readonly}}
+        <i data-link="class{:'fa '+(value? 'fa-check':'fa-square-o')}"></i>
+    {{else}}
+    <div class="custom-control custom-checkbox">
+        <input type="checkbox" class="custom-control-input" id="eCb{{:name}}" data-link="{:value:}"> 
+        <label class="custom-control-label" for="eCb{{:name}}"></label>
+    </div>
+    {{/if}}
+
+{{else readonly}}
+    <p data-link="html{:text_value || value convert=fmt}"></p>
+
+
+{{else type == 'select'}}
+<a href="#" data-name="{{:name}}" data-roinplace="eCardSave" data-editor="select"
+    data-link="{on 'onInplaceBeforeInit' ~S.eInplaceBeforeInit} {on 'eCardSave' ~eCardSave} text{:text_value||value convert=fmt}"></a>
+
+{{else}}
+    <a href="#" data-name="{{:name}}" data-roinplace="eCardSave" data-editor="{{:type}}"
+        data-link="{:value convert=fmt showempty=true} {on 'onInplaceBeforeInit' ~S.eInplaceBeforeInit} {on 'eCardSave' ~eCardSave}"></a>
+[[-
+{{else}}
+    {{if type == "select"}}
+        {{if !labelin}}
+            <a href="#" data-name="{{:name}}" data-roinplace="eCardSave" data-editor="select"
+            data-link="data-id{:value} {on 'roinit' ~S.helpers.buildSelect} {on 'onInplaceBeforeInit' ~S.eInplaceBeforeInit} {on 'eCardSave' ~eCardSave} class{:cellattr? 'link-text dashed '+~S.helpers[cellattr](#data): 'link-text dashed'}">
+                {{if text}}
+                    <span>{^{:~lead[text] convert=~S.converters[formatter]}}</span>
+                {{else}}
+                    <span data-link="rename">{^{:~S.helpers.getText(#data) convert=~S.converters[formatter]}}</span>
+                {{/if}}
+            </a>
+        {{else}}
+            <select class="custom-select" name="{{:name}}" id="cardField{{:name}}" data-link="{:value:} {on 'change' ~saveParam}">
+                {^{for options ~S.helpers.buildSelect(~cfg)}}
+                    <option value="{{:value}}">{{:name}}</option>
+                {{/for}}
+            </select>
+        {{/if}}
+
+    {{else}}
+        {{if !labelin}}
+            <a href="#" data-name="{{:name}}" data-roinplace="saveLead" data-link="{:value convert=~S.converters[formatter]} class{:cellattr? 'link-text dashed '+~S.helpers[cellattr](#data): 'link-text dashed'}"></a>
+        {{else}}
+            <input name="{{:name}}" class="form-control" id="cardField{{:name}}" data-link="{on 'change' ~saveParam} {:value convert=~S.converters[formatter]:} class{:cellattr? 'form-control '+ ~S.helpers[cellattr](#data):'form-control'}">
+        {{/if}}
+    {{/if}}
+]]
+
+{{/if}}
+</script>
+
+<script id="tmpl_eCard" type="text/x-jsrender">
+<form data-link="{on 'submit' save}">
+    {^{for rows itemVar="~cfg" ~lead=data ~saveParam=saveParam ~saveBtn=saveBtn}}
+        {{if type=='hr' tmpl='<hr>'}}
+        {{else type == 'textarea'}}
+            <div class="publisher publisher-alt keep-focus focus mb-2">
+                <div class="publisher-input">
+                    <textarea class="form-control text-small" data-link="{:value:} rows{:rows || 2} readonly{:readonly}"></textarea>
+                </div>
+                <div class="publisher-actions" data-link="visible{:!~saveBtn&&(value!=old_value)}">
+                    <button type="button" class="btn btn-primary btn-sm ml-auto mb-2" data-link="{on ~saveParam}">Сохранить</button>
+                </div>
+            </div>
+        {{else labelin}}
+            <div class="form-label-group mb-2">
+                <label for="cardField{{:name+#index}}">{{:label || name}}</label>
+                <input name="{{:name}}" class="form-control" id="cardField{{:name+#index}}"
+                    data-link="{on 'change1' ~eCardSave} {:value convert=fmt :} class{:cellattr? 'form-control '+ ~S.helpers[cellattr](#data):'form-control'}">
+            </div>
+        {{else}}
+            <div class="form-row mb-2">
+                <div class="col-6">
+                    <label for="cardField{{:name}}">{{:label || name}}</label>
+                </div>
+                <div class="col-6" data-link="{include tmpl='#eCardFields'}">
+                </div>
+            </div>
+        {{/if}}
+    {{/for}}
+    {^{if ~eCardBtnSave(saveBtnVisible)}}
+    <div style="z-index:30; bottom:0; background: linear-gradient(90deg, rgba(255,255,255,0.5) 0, rgba(255,255,255,1) 100%);" class="eCardSaveBtn bg-danger py-3">
+        <button type="button" class="btn btn-primary" data-link="{on ~eCardSaveForm}">Сохранить</button>
+    </div>
+    <div class="eCardSaveSpace"></div>
+    {{/if}}
+</form>
+</script>
+
+<script>
+SCRM.helpers = {
+    cellInsuranceColor: function(data){
+        var cls = SCRM.dateDiffClass(data.value, data.dateDiffWarn, data.dateDiffDanger);
+        if (cls) return ['font-weight-bold', cls].join(" ");
+    },
+    cellEmptyColor: function(data){
+        if (!data.value) return 'rowNo';
+    },
+    cellSaldoColor2: function(data){
+        return data.tmp_cls;
+    },
+    cellSaldoColor3: function(data){
+        var invoiced = (data.invoiced) ? data.invoiced*1 : 0;
+        var payed = (data.payed) ? data.payed*1 : 0;
+        data.i_g_p = invoiced - payed;
+        if (data.i_g_p == 0) return '';
+        return arr2clstring([(data.i_g_p > 0)? 'rowYes' : 'rowNo']);
+    },
+    cellSaldoColor4: function(data){
+        if (data.i_g_p == 0) return '';
+        return arr2clstring([(data.i_g_p < 0)? 'rowYes' : 'rowNo']);
+    },
+};
+
+SCRM.eInplaceBeforeInit = function(e, data, inData) {
+    var d = data.linkCtx.data,
+        cs = d.clubStatus,
+        dbv = d.dbvalues;
+    
+    d.inData = inData;
+
+    function setOptions(nd){
+        nd = $.extend({
+            value: d.value,
+            old_value: d.value,
+            options: []
+        }, nd);
+        if (nd.options.length) nd.options = $.merge([{id: d.value0, name: d.value0text}], nd.options);
+        
+        SCRM.link(inData, nd);
+        $.observe(inData, 'value', function(e, odata) {
+            SCRM.link(d, 'new_value', odata.value);
+        });
+    }
+
+    function clubStatus(){
+        var rows = SCRM.clubStatus[cs];
+        if (!rows) {
+            pJSON('/data/status/'+cs, function(data){
+                SCRM.setClubStatus(data.rows);
+                clubStatus();
+            });
+            return;
+        }
+        setOptions({
+            options: $.map(rows, function(v, i) {
+                return {id: v[d.lookupKey||'id'], name: v.name};
+            })
+        });
+    }
+    
+    function dbValues(){
+        var rows = SCRM.dbValues[dbv];
+        if (!rows) {
+            pJSON('/data/dbvalues/', {mode: dbv}, function(data){
+                SCRM.dbValues[dbv] = data[dbv];
+                dbValues();
+            });
+            return;
+        }
+        setOptions({options: rows});
+    }
+    
+    if (cs) clubStatus();
+    else if (dbv) dbValues();
+    else if (d.custom_html) {
+        SCRM._run(d.custom_html, function(data) {
+            //TODO: Если значение html или data.rows
+            setOptions({
+                html: data
+            });
+        });
+    }
+    else setOptions();
+};
+
+
+SCRM.addEditPopMenu = function(e, data, pd) {
+    var d = data.linkCtx.data,
+        lnk = $(e.target);
+    if (!d.readonly) {
+        pd.rows.push({
+            href: '#ecardPopMenuEdit',
+            cls: 'closePopover',
+            ico: 'fa-pencil-square-o',
+            text: 'Редактировать',
+        });
+        $(document)
+        .off('click.ecardPopMenuEdit')
+        .on('click.ecardPopMenuEdit', '[href="#ecardPopMenuEdit"]', function(e){
+            e.preventDefault();
+            SCRM.loadWSS('roinplace', function() {
+                lnk.roinplace();
+            });
+        });
+    }
+}
+
+SCRM.converters = {
+    createdTemplate: function(val){
+        val = str2date(val, 'dt');
+        var item = this.ctx.root.srcData;
+        var ed = (item.edited)? makeIco('fa-pencil ml-1') : '';
+        return `<a href="#" class="fmtCreated" data-id="${item.id}" data-tbl="idLead">${val}${ed}</a>`;
+    }
+};
+
+$.views.converters({
+    formatEmptySelect: function(val) {
+        if (this.linkCtx) {
+            var d = this.linkCtx.data;
+            if (!d.value||d.value==d.value0) val = d.value0text;
+        }
+        return val;
+    }
+});
+
+SCRM.eCardBtnSave = function() {
+    var win = $(window),
+        wt = win.scrollTop(),
+        wh = win.height();
+    $('.eCardSaveBtn').each(function(i, b){
+        var btn = $(b),
+            form = btn.closest('form');
+            
+        var et = form.offset().top,
+            eh = form.outerHeight(),
+            space = $(".eCardSaveSpace", form);
+            
+        if (wt+wh >= et && wt+wh < et+eh ) {
+            if ( !btn.hasClass('position-fixed') ) {
+                btn.addClass('position-fixed').css('width', form.outerWidth());
+                space.show().css('height', btn.outerHeight());
+            }
+        } else {
+            if ( btn.hasClass('position-fixed') ) {
+                btn.removeClass('position-fixed').css('width', 'auto');
+                space.hide();
+            }
+        }
+    });
+}
+
+$(document)
+.off('scroll.eCardForm')
+.on('scroll.eCardForm', SCRM.eCardBtnSave);
+
+$(window)
+.off('resize.eCardForm')
+.on('resize.eCardForm', function(e) {
+    $(".eCardSaveBtn.position-fixed").each(function(i, b){
+        var btn = $(b);
+        btn.css("width", btn.closest('form').outerWidth());
+    });
+});
+
+
+// TODO: Если нет текста для lookup полей
+
+SCRM._service['[[+rq]]'] = function(data) {
+    
+    /* Пример использования
+    club_Drawer({mdl_id: "leadCardModal",cm_size: 'lg',body:"<div id='myid'></div>"});
+    pDATA("idLead", {_where:{id:1}},function(rows){SCRM._run('/chunk/multiCard', {
+        table: "idLead",
+        data: rows.rows[0],
+        block:"#myid",
+        cfgName: "idLead_card"
+    })});
+    */
+
+    var table = data.table,
+        fieldCfg = SCRM.app[data.cfgName],
+        container = $(data.block||data.container);
+
+    if (!fieldCfg) {
+        alert('Empty eCard config');
+        return false;
+    }
+    
+    
+    function changedRows(rows){
+        return $.map(rows||eCard.rows, function(v, i) {
+            if ('new_value' in v) {
+                if (v.value != v.new_value) return v;
+            }
+            if (v.value != v.old_value) return v;
+        });
+    }
+
+    var prevData = container.data('eCard');
+    if (prevData) {
+        var chRows = changedRows(prevData.rows);
+        console.log('chRows', chRows);
+        if (chRows.length) {
+            var confMdl = {
+                ok: 'Сохранить',
+                cancel: 'Не сохранять',
+                title: 'Обнаружены несохраненные изменения',
+                changes: chRows,
+                body: '<ul>{{for changes}}<li>{{:label||name}}</li>{{/for}}</ul>',
+                onOK: function(e, md){
+                    _eCardSave(prevData.srcData.id, chRows)
+                    .always(function(){
+                        md.mdl_hide();
+                    });
+                }
+            };
+            club_Modal(confMdl)
+            .on('hidden.bs.modal', function (e) {
+                $('.onDestroyParent', container).trigger('onDestroyParent');
+                container.data('eCard', null);
+                SCRM._run('[[+rq]]', data);
+            });
+            return;
+        }
+    }
+    
+    var eCard = {
+        srcData: data.data
+    };
+    
+    function _eCardSave(id, rows){ //TODO reload alert 
+        var eData = {
+            id: id
+        };
+        $.each(rows, function(i, d) {
+            var nd = {
+                value: d.value
+            };
+            if ('value' in d.inData) { // Внешний редактор
+                nd.value = d.inData.sql_value || d.inData.value;
+            }
+            if (d.type=='select' && d.inData.roInplace) {
+                nd.text_value = d.inData.roInplace.find('option:selected').text();
+            }
+            nd.old_value = nd.value;
+            SCRM.link(d, nd);
+            eData[d.name] = nd.value;
+        });
+        return pEDIT(table, eData, function(data){
+            container.trigger('needReload');
+            SCRM.success('Saved');
+        });
+    }
+    
+    var block = $('<div></div>');
+    container.html(block).data('eCard', eCard);
+    
+    var typeFormatters = {
+        datetime: 'formatDateTime',
+        date: 'formatDate',
+        money: 'formatMoney',
+        select: 'formatEmptySelect'
+    };
+    
+    eCard.rows = $.map(fieldCfg, function(v, i) {
+        var row = $.extend({
+            value: eCard.srcData[v.name],
+            text_value: eCard.srcData[v.text],
+            fmt: typeFormatters[v.type],
+            value0text: SCRM.emptyStr,
+            value0: '',
+            inData: {}
+        }, v);
+        
+        if (v.type == 'savebtn') {
+            eCard.saveBtn = v.label || 'Сохранить';
+            return;
+        }
+   
+        if ('formatter' in v) row.fmt = SCRM.converters[v.formatter] || v.formatter;
+        if (v.dbvalues) row.value0 = '0';
+
+        row.old_value = row.value;
+        return row;
+    });
+    
+    $.templates('#tmpl_eCard')
+    .link(block, eCard, {
+        eCardSave: function(e, data, val) {
+            _eCardSave(eCard.srcData.id, [ data.linkCtx.data ]);
+        },
+        eCardSaveForm: function(e, data, val) {
+            _eCardSave(eCard.srcData.id, changedRows());
+        },
+        eCardBtnSave: function(visible) {
+            if (visible) setTimeout(SCRM.eCardBtnSave, 12);
+            return visible;
+        }
+    });
+    if (eCard.saveBtn) {
+        $.observe(eCard, 'rows^**', function(e, data){
+            SCRM.link(eCard, 'saveBtnVisible', changedRows().length);
+        });
+    }
+}
+</script>

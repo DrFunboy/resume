@@ -1,0 +1,231 @@
+<!-- clubReport2 -->
+<div id="expenseReport" data-link="{include tmpl='#tmpl_expenseReport'}"></div>
+<script id="tmpl_expenseReport" type="text/x-jsrender">
+    <div class="nav nav-tabs">
+        <a class="nav-link active" data-toggle="tab" href="#tab_period">Период</a>
+        <a class="nav-link calculate" data-toggle="tab" href="#tab_halfyear">Полугодие</a>
+    </div>
+    
+    <div class="tab-content card-body">
+        <div id="tab_period" class="tab-pane active">
+            <div class="row"> 
+                <div class="col-6">
+                    <div class="text-center h5">Расход</div>
+                    <div data-link="visible{:!period_expense}" id="period_expense"></div>
+                    <h3 class="text-center" data-link="visible{:period_expense}">Нет данных</h3>
+                </div>
+                
+                <div class="col-6">
+                    <div class="text-center h5">Доход</div>
+                    <div data-link="visible{:!period_profit}" id="period_profit"></div>
+                    <h3 class="text-center" data-link="visible{:period_profit}">Нет данных</h3>
+                </div>
+                
+            </div>
+        </div>
+        <div id="tab_halfyear" class="tab-pane">
+            <div class="row"> 
+                <div class="col-12">
+                    <div id="halfyearBar"></div>
+                </div>
+                
+                <div class="col-6">
+                    <div class="text-center h5" data-link="visible{:isRender}">Расход</div>
+                    <div id="half_expense" data-link="visible{:!half_expense}"></div>
+                    <h3 class="text-center" data-link="visible{:half_expense}">Нет данных</h3>
+                </div>
+                <div class="col-6">
+                    <div class="text-center h5" data-link="visible{:isRender}">Доход</div>
+                    <div id="half_profit" data-link="visible{:!half_profit}"></div>
+                    <h3 class="text-center" data-link="visible{:half_profit}">Нет данных</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+<script id="mdl_details" type="text/x-jsrender">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Название</th>
+                <th scope="col">Итого</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{for array}}
+                <tr>
+                    <td>{{:name}}</td>
+                    <td>{{formatMoney:sum}}</td>
+                </tr>
+            {{/for}}
+        </tbody>
+    </table>
+</script>
+
+<script>
+function getC3Col(array){
+    var more = [],
+        less = [],
+        another = ["Другое"],
+        anotherSum = 0,
+        total = 0;
+    
+    $.each(array, function(k,v){
+        total += v.sum*1;
+    });
+    
+    $.each(array, function(k,v){
+        if (!v.sum) return; 
+        if (v.sum < total * 0.05) {
+            less.push( [`${v.name} (${v.sum*1})`, v.sum]  );
+            anotherSum += v.sum*1;
+            another.push( v.sum );
+        } else {
+            more.push( [`${v.name} (${v.sum*1})`, v.sum] );
+        }
+    });
+    if (!less.length) return more;
+    another[0] += " ("+anotherSum+")";
+    less.length >= 2? more.push(another) : more.push(less[0]);
+    return more;
+};
+
+function pieModal(array){
+    var beauty = [];
+    $.each(array, function(k,v){
+        v.menuindex = v.menuindex*1;
+        if (v.name) beauty.push(v);
+    });
+    
+    var mdl = {
+        title: "Подробнее",
+        body: "#mdl_details",
+        array: beauty
+    };
+    club_Modal(mdl);
+};
+
+SCRM.loadWSS(['c3'], function(){
+    function generatePies(d1, d2, expenseid, profitid){
+        pJSON('/hook/calculateProfit', {
+            d1: d1,
+            d2: d2
+        }, function(periodProfit){
+            pDATA('idExpense', {
+                d1: d1,
+                d2: d2,
+                groupby: "idExpense.status",
+                _report: 'idExpense_d1d2'
+            }, function(periodExpense){
+                SCRM.link(app).setProperty(expenseid.slice(1), !periodExpense.rows.length);
+                SCRM.link(app).setProperty(profitid.slice(1), !periodProfit.rows.length);
+                c3.generate({
+                    bindto: expenseid,
+                    data: {
+                        type : 'pie',
+                        columns: getC3Col(periodExpense.rows),
+                        onclick: function (d, i) { 
+                            pieModal( periodExpense.rows );
+                        }
+                    }
+                });
+                c3.generate({
+                    bindto: profitid,
+                    data: {
+                        type : 'pie',
+                        columns: getC3Col(periodProfit.rows),
+                        onclick: function (d, i) { 
+                            pieModal(periodProfit.rows);
+                        }
+                    }
+                });
+            })
+        });
+    }
+    
+    var app = {};
+    $.link(true, '#expenseReport', app);
+    
+    $.observe(clubReport, "dates", function(e,d){
+        generatePies(clubReport.dates.d1, clubReport.dates.d2, "#period_expense", "#period_profit");
+    });
+    generatePies(clubReport.dates.d1, clubReport.dates.d2, "#period_expense", "#period_profit");
+    
+    $(document)
+    .one('calculate', '[href="#tab_halfyear"]', function(e) {
+        var date = new Date(), y = date.getFullYear(), m = date.getMonth(),
+            months = {};
+        
+        for (var i = 0; i < 6; i++) {
+            var month = new Date(y, m - i, 0).toLocaleDateString('sv').split("-");
+            months[`${month[1]}.${month[0]}`] = {
+               profit: [], 
+               expense: []
+            };
+        }
+        
+        pJSON('/hook/calculateProfit', {
+            d1: new Date(y, m -6, 1).toLocaleDateString('sv'),
+            d2: new Date(y, m, 0).toLocaleDateString('sv'),
+            groupby: "idPay.id"
+        }, function(halfProfit){
+            pDATA('idExpense', {
+                d1: new Date(y, m -6, 1).toLocaleDateString('sv'),
+                d2: new Date(y, m, 0).toLocaleDateString('sv'),
+                _report: 'idExpense_d1d2',
+            }, function(halfExpense){
+                var halfCol = [
+                    ["Доход", 0, 0, 0, 0, 0, 0],
+                    ["Расход", 0, 0, 0, 0, 0, 0]
+                ];
+                
+                $.each(halfProfit.rows, function(k,v){
+                    var month = v.datepay.split("-");
+                    months[`${month[1]}.${month[0]}`].profit.push(v);
+                    v.datepay = new Date(v.datepay);
+                    halfCol[0][m - v.datepay.getMonth()] += v.sum*1;
+                });
+                
+                $.each(halfExpense.rows, function(k,v){
+                    var month = v.date.split("-");
+                    months[`${month[1]}.${month[0]}`].expense.push(v);
+                    v.date = new Date(v.date);
+                    halfCol[1][m - v.date.getMonth()] += v.sum*1;
+                });
+                var monthNames = Object.keys(months);
+                
+                c3.generate({
+                    bindto: '#halfyearBar',
+                    data: {
+                        columns: halfCol,
+                        type: 'bar',
+                        labels: {format: function (v, id, i, j) {
+                            return formatDigits(v);
+                        }},
+                        onclick: function (d, i) { 
+                            var thisMonth = monthNames[d.index].split("."),
+                                firstDay = new Date(thisMonth[1], thisMonth[0]-1, 1).toLocaleDateString('sv'),
+                                lastDay = new Date(thisMonth[1], thisMonth[0], 0).toLocaleDateString('sv');
+                                
+                            generatePies(firstDay, lastDay, "#half_expense", "#half_profit");
+                            SCRM.link(app ,{isRender: true});
+                        },
+                    },
+                    bar: {
+                        width: {
+                            ratio: 0.8
+                        }
+                    },
+                    axis: {
+                        x: {
+                            type: 'category',
+                            categories: monthNames
+                        }
+                    }
+                });
+            });
+        })
+    })
+});
+</script>
