@@ -1,0 +1,51 @@
+<script id="tpl_gCalendar" type="text/x-jsrender">
+    {^{props optsFields tmpl="#tpl_AceBox" /}}
+    
+     <div class="card card-fluid">
+        <div class="card-header"> Записи </div>
+        <ul class="sortable-lists list-group list-group-flush list-group-bordered" data-toggle="sortable" data-group="pages">
+        {^{props gCalendar^reserve ~delEvent=delEvent}}
+            <li class="list-group-item align-items-center">
+                <div>
+                    <div>{{:prop.name}}</div>
+                    <div class="text-muted"> {{formatDateTime:key}} </div>
+                </div>
+                <button class="btn btn-light btn-xs ml-auto" data-link="{on ~delEvent}"><i class="fa fa-trash"></i></button>
+            </li>
+            {{/props}}
+        </ul>
+    </div>
+</script>
+
+
+<script>
+SCRM._service['[[+rq]]'] = function(fields) {
+    var gCalendar = {
+        cfg: JSON.parse(optsData.opts.gCalendar||'{}')
+    };
+    SCRM.link(optsData, {
+        gCalendar: gCalendar,
+        optsFields: fields,
+        optsTmpl: '#tpl_gCalendar',
+        delEvent: function(e,d){
+            var data = d.linkCtx.data;
+            pJSON("/hook/demo", {
+                mode: "del",
+                name: data.prop.name,
+                start: data.key
+            }, function(anws){
+                if (anws.ok) $.observable(d.view.parent.data).remove(d.view.index);
+            })
+        }
+    });
+    
+    $('[data-ace]').on('clubAce', function(e, editor){
+        SCRM.link(gCalendar, "editor", editor);
+    })
+    bindAceEditor();
+    
+    pJSON("/hook/demo", {mode: "reserve"}, function(reserve){
+        SCRM.link(gCalendar, "reserve", reserve);
+    })
+}
+</script>
