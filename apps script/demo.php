@@ -109,7 +109,7 @@ if ($mode == "lead") {
     
     $reserve = json_decode(file_get_contents($exec), true);
     foreach($reserve as $key=>$val){
-        $reserve[$key] = [];
+        $reserve[$key] = ['start' => $key];
     }
     
     $json['reserve'] = $reserve;
