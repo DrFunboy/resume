@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>delete</FormID>
+  <GroupID>task_employee</GroupID>
+  <Label>Удалить</Label>
+  <Name>delete</Name>
+  <SQL>
+    delete from employee_task where TaskID='@id;';
+  </SQL>
+  <SubmitBtn>1</SubmitBtn>
+</form>

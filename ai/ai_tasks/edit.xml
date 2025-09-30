@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_tasks</GroupID>
+  <Label>Редактировать задачу</Label>
+  <Name>edit</Name>
+  <Redirect>/ai_tasks/select</Redirect>
+  <SQL>UPDATE ai_tasks SET
+  Prompt='@Prompt;',
+  PromptID = '@PromptID;',
+  DateStart=from_unixtime('@DateStart;'),
+  DateEnd = if('@DateEnd;'&gt;0,from_unixtime('@DateEnd;'), null),
+  EditUserID = '$auth-&gt;user;',
+  EditDate = now(),
+  Active='@Active;'
+  WHERE TaskID='@id;'</SQL>
+  <SQLselect>SELECT
+  at.TaskID,
+  at.Active,
+  UNIX_TIMESTAMP(at.DateStart) AS DateStart,
+  UNIX_TIMESTAMP(at.DateEnd) AS DateEnd,
+  at.Prompt,
+  at.PromptID
+FROM
+  ai_tasks at
+WHERE
+  at.TaskID = '@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Статус активности</Label>
+    <Name>Active</Name>
+    <Type>4</Type>
+  </Inputs>
+  <Inputs>
+    <Calendar>1</Calendar>
+    <DefaultValue>@time();</DefaultValue>
+    <Label>Расписание от</Label>
+    <MinDate>@time();</MinDate>
+    <Name>DateStart</Name>
+    <Needed>1</Needed>
+    <Type>30</Type>
+  </Inputs>
+  <Inputs>
+    <Calendar>1</Calendar>
+    <Label>до</Label>
+    <Name>DateEnd</Name>
+    <Type>30</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Контекст</Label>
+    <Name>PromptID</Name>
+    <SQL>Select PromptID, PromptName FROM ai_prompts WHERE Active = 1</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Запрос</Label>
+    <Name>Prompt</Name>
+    <Popover>$promptVarsHint;</Popover>
+    <RawValue>1</RawValue>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Act>select</Act>
+    <Group>ai_tasks_ai_models</Group>
+    <Label>ИИ модели</Label>
+    <Name>AIModelID</Name>
+    <Type>31</Type>
+  </Inputs>
+  <Inputs>
+    <Act>select</Act>
+    <Group>ai_tasks_conditions</Group>
+    <Label>Условия задачи</Label>
+    <Name>ConditionID</Name>
+    <Type>31</Type>
+  </Inputs>
+  <Inputs>
+    <Act>select</Act>
+    <Group>ai_tasks_qc_calls_types</Group>
+    <Label>Тип звонка</Label>
+    <Name>CallTypeID</Name>
+    <Type>31</Type>
+  </Inputs>
+  <Inputs>
+    <Act>select</Act>
+    <Group>ai_tasks_questions</Group>
+    <Label>Вопросы</Label>
+    <Name>QuestionID</Name>
+    <Type>31</Type>
+  </Inputs>
+</form>

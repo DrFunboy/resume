@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;, ag::broker;, ag::headBroker;</AllowedUsersGroups>
+  <FormCaption>Изменить статус</FormCaption>
+  <FormID>change_status_modal</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Изменить статус</Label>
+  <Name>change_status_modal</Name>
+  <OnAjaxSubmitFunction>let modalFormID = $('#modalForm_task_checklist_item_items_modal_content').data('form-id');
+reloadFormByID(modalFormID);
+$('#modalForm_task_checklist_item_change_status_modal').modal('hide');</OnAjaxSubmitFunction>
+  <PerPage>50</PerPage>
+  <SQL>UPDATE employee_task_checklist_status
+SET 
+  DateStatus = IF('@Status;' != 1, NULL, NOW()),
+  Status = '@Status;',
+  Result = '@Result;',
+  ResultText = '@ResultText;'
+WHERE StatusID = '@StatusID;'</SQL>
+  <SQLselect>SELECT
+  StatusID,
+  Status,
+  Result,
+  ResultText
+FROM employee_task_checklist_status 
+WHERE StatusID = '@StatusID;'
+ORDER BY DateEnd</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <DefaultValue>@StatusID;</DefaultValue>
+    <Name>StatusID</Name>
+    <Type>47</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Статус</Label>
+    <Name>Status</Name>
+    <SQL>array( array(0, 'Не выполнено'), array(1, 'Выполнено') );</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Результат</Label>
+    <Name>Result</Name>
+    <Needed>1</Needed>
+    <SQL>array( array(1, 'Отрицательный'), array(10, 'Положительный') );</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Комментарий</Label>
+    <Name>ResultText</Name>
+    <NeededConditions>Status=1</NeededConditions>
+    <Type>2</Type>
+  </Inputs>
+</form>

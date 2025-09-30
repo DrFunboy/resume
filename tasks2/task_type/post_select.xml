@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>post_add</AddBtn>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>post_delete</DropBtn>
+  <FormID>post_select</FormID>
+  <GroupID>task_type</GroupID>
+  <LightForm>1</LightForm>
+  <Name>post_select</Name>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT ettp.ID, ep.PostName
+FROM employee_task_type_post ettp
+JOIN employees_posts ep ON ep.PostID = ettp.PostID
+WHERE ettp.TaskTypeID = '@id;'
+ORDER BY ep.PostName</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>PostName</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

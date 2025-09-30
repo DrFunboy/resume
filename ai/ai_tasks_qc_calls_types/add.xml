@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>add</FormID>
+  <GroupID>ai_tasks_qc_calls_types</GroupID>
+  <Label>Добавить</Label>
+  <Name>add</Name>
+  <Redirect>type=ai_tasks_qc_calls_types&amp;act=select&amp;id=@id;</Redirect>
+  <SQL>insert into ai_tasks_qc_calls_types set CallTypeID='@CallTypeID;', TaskID='@id;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно добавлено!</SuccessMsg>
+  <TableName>ai_tasks_qc_calls_types</TableName>
+  <Inputs>
+    <Label>Тип звонка</Label>
+    <Name>CallTypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT
+	ict.CallType AS CallTypeID,
+	ict.`Comment` AS CallTypeName
+FROM
+	ip_calls_type ict
+	LEFT JOIN ip_calls_type child_ict ON child_ict.ParentType = ict.CallType
+WHERE 
+	ict.ParentType != 0
+	OR child_ict.CallType IS NULL
+ORDER BY
+	ict.CallType ASC</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group>
+  <Active>1</Active>
+  <MenuName>Стандартные промпты</MenuName>
+  <Name>ai_prompts</Name>
+  <ParentName>ai</ParentName>
+</group>

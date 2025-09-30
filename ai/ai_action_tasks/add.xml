@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>add</FormID>
+  <GroupID>ai_action_tasks</GroupID>
+  <Label>Добавить задачу</Label>
+  <Name>add</Name>
+  <Redirect>/ai_action_tasks/edit/?id=@insTaskID;</Redirect>
+  <SQL>INSERT INTO ai_tasks SET
+  TaskName = '@TaskName;',
+  CreateUserID = '$auth-&gt;user;',
+  TypeID = '@TypeID;',
+  Active = 0,
+  DateStart = now(),
+  CreateDate = now();
+
+##set @insTaskID = 'DB::$insertedID;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>TaskName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Тип</Label>
+    <Name>TypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT TypeID, Name FROM ai_task_type WHERE TypeID IN (2,3)</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

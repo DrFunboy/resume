@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Добавить задачу</FormCaption>
+  <FormID>add</FormID>
+  <GroupID>task_employee</GroupID>
+  <Label>Добавить задачу</Label>
+  <LightForm>1</LightForm>
+  <Name>add</Name>
+  <PerPage>50</PerPage>
+  <Redirect>/task_employee/select</Redirect>
+  <SQL>^*employees\task::createTask([
+  'TaskTypeID' =&gt; '@TaskTypeID;',
+  'UserID' =&gt; '@UserID;',
+  'Force' =&gt; true,
+]);</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Label>Тип задачи</Label>
+    <Name>TaskTypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT TaskTypeID, TaskTypeName  FROM employee_task_type  WHERE LinkType = 2 AND Active = 1 AND ConditionDate &lt;= Curdate()</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Сотрудник</Label>
+    <Name>UserID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT su.UserID, su.Fullname, emp.PostName FROM sys_users su INNER JOIN employee em ON su.UserID= em .UserID INNER JOIN employees_posts emp ON emp .PostID = em.BrokerPostID WHERE su.Active = 1 AND $auth-&gt;getAccessUsersSQL(); </SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

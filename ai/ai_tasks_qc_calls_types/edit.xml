@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_tasks_qc_calls_types</GroupID>
+  <Label>Редактировать</Label>
+  <Name>edit</Name>
+  <Redirect>type=ai_tasks_qc_calls_types&amp;act=select&amp;id=@masterid;</Redirect>
+  <SQL>UPDATE ai_tasks_qc_calls_types SET CallTypeID='@CallTypeID;' WHERE ID='@id;'</SQL>
+  <SQLselect>
+    SELECT * FROM ai_tasks_qc_calls_types WHERE ID='@id;'
+  </SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно обновлено!</SuccessMsg>
+  <Inputs>
+    <Label>Тип звонка</Label>
+    <Name>CallTypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT
+	ict.CallType AS CallTypeID,
+	ict.`Comment` AS CallTypeName
+FROM
+	ip_calls_type ict
+	LEFT JOIN ip_calls_type child_ict ON child_ict.ParentType = ict.CallType
+WHERE 
+	ict.ParentType != 0
+	OR child_ict.CallType IS NULL
+ORDER BY
+	ict.CallType ASC</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_prompts</GroupID>
+  <Label>Редактировать задачу</Label>
+  <Name>edit</Name>
+  <Redirect>/ai_prompts/select</Redirect>
+  <SQL>UPDATE ai_prompts SET
+  PromptName = '@PromptName;',
+  PromptText = '@PromptText;',
+  Active = '@Active;';
+WHERE PromptID='@id;'</SQL>
+  <SQLselect>SELECT 
+  PromptID,
+  PromptName,
+  PromptText,
+  Active
+FROM ai_prompts
+WHERE PromptID='@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>PromptName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Контекст</Label>
+    <Name>PromptText</Name>
+    <Needed>1</Needed>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Статус активности</Label>
+    <Name>Active</Name>
+    <Type>4</Type>
+  </Inputs>
+</form>

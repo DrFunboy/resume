@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;, ag::broker;, ag::headBroker;</AllowedUsersGroups>
+  <CanPrint>1</CanPrint>
+  <DrawRowCount>1</DrawRowCount>
+  <DropBtn>delete</DropBtn>
+  <FormID>select</FormID>
+  <GroupID>task_employee</GroupID>
+  <Label>Задачи сотрудников</Label>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <OverflowX>1</OverflowX>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT
+  et.TaskID, 
+  ett.TaskTypeID,
+  ett.TaskTypeName,
+  ett.Description,
+  etu.Fullname,
+  suboss.BossName,
+  et.ResultID,
+  CONCAT(et.ResultDate, ' &lt;br&gt;( ', DrawTime(
+    TIMESTAMPDIFF(SECOND, et.DateTimeStart, et.ResultDate)
+  ), ')') as ResultDate,
+  etr.ResultName AS ResultName,
+  et.DateTimeEnd,
+  et.DateTimeStart,
+  CONCAT( SUM(IF(etcls.Status = 0, 0, 1)), ' / ', COUNT(etcls.ItemID)) AS ItemProgress,
+  getClientLink(cl.Company, cl.ClientID, 0, cl.IsOwner) as ClientName,
+  price2short(cl.Budget) as Budget,
+  IF(cl.PropertyTypeID=1, 'Аренда', 'Продажа') as PropertyTypeID,
+  IF(et.ResultID = 1 AND et.DateTimeEnd &lt; NOW(), 'text-danger', '') AS DateEndClass,
+  getBuildLink(b.InternalName, b.BuildID, et.BlockID) AS BlockLink,
+  GROUP_CONCAT(etcls.ResultText SEPARATOR '&lt;br&gt;') as ItemResults,
+  csg.Name AS BasicGroupName,
+  ett.LinkType
+
+FROM employee_task et
+INNER JOIN employee_task_type ett 
+  ON ett.TaskTypeID = et.TaskTypeID
+
+INNER JOIN (
+  SELECT
+    etu.TaskID,
+    GROUP_CONCAT(getBrokerLink(su.Fullname, su.UserID, '$auth-&gt;group;', '', '') SEPARATOR '&lt;br&gt;') as Fullname
+  FROM employee_task_user etu
+  INNER JOIN sys_users su
+    ON su.UserID = etu.UserID
+  INNER JOIN employee em on em.UserID = etu.UserID
+  WHERE
+    $auth-&gt;getAccessUsersSQL();
+    AND IF('@userID;' != '', su.UserID = '@userID;', true)
+  GROUP BY etu.TaskID
+) as etu ON etu.TaskID = et.TaskID
+
+INNER JOIN (
+  SELECT
+    etu.TaskID,
+    GROUP_CONCAT(
+      IF(emd.BossID != su.UserID AND emd.BossID2 != su.UserID,
+        getBrokerLink(suboss.Fullname, suboss.UserID, '$auth-&gt;group;', '', ''),
+      NULL) SEPARATOR '&lt;br&gt;'
+    ) as BossName
+  FROM employee_task_user etu
+  INNER JOIN sys_users su
+    ON su.UserID = etu.UserID
+  INNER JOIN employee em on em.UserID = etu.UserID
+  INNER JOIN employee_departments emd on emd.ID = em.DepartmentID
+  INNER JOIN sys_users suboss
+    ON (suboss.UserID = emd.BossID OR suboss.UserID = emd.BossID2) 
+  WHERE
+    $auth-&gt;getAccessUsersSQL();
+    AND IF('@userID;' != '', su.UserID = '@userID;', true)
+  GROUP BY etu.TaskID
+) as suboss ON suboss.TaskID = et.TaskID
+
+INNER JOIN employee_task_checklist_status etcls
+  ON etcls.TaskID = et.TaskID
+LEFT JOIN employee_task_result etr 
+  ON etr.ResultID = et.ResultID
+LEFT JOIN clients cl 
+  ON cl.ClientID = et.ClientID
+LEFT JOIN clients_history clh 
+  ON clh.ID = et.ClientHistoryID
+LEFT JOIN calls_sources cs 
+  ON cs.SourceID = clh.SourceID
+LEFT JOIN calls_sources_groups csg 
+  ON csg.ID = cs.BaseGroupID
+LEFT JOIN blocks bl 
+  ON bl.BlockID = et.BlockID
+LEFT JOIN buildings b 
+  ON b.BuildID = bl.BuildID AND b.Deleted = 0
+
+WHERE 
+  IF('@resultID;' != '', et.ResultID = '@resultID;', true)
+  AND IF('@typeID;' != '', et.TaskTypeID = '@typeID;', true)
+  AND IF(
+    '@minDateEnd;' != '' AND '@maxDateEnd;' != '', 
+    et.DateEnd BETWEEN '@minDateEnd;' AND '@maxDateEnd;', 
+    true
+  )
+GROUP BY et.TaskID
+ORDER BY et.ResultID, et.DateEnd, Fullname</SQLselect>
+  <Inputs>
+    <Insertion>style="max-width:200px"</Insertion>
+    <Label>Название</Label>
+    <Name>TaskTypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание</Label>
+    <Name>Description</Name>
+    <Type>1</Type>
+    <Wrappable>1</Wrappable>
+  </Inputs>
+  <Inputs>
+    <DefaultValue>@TaskTypeID;</DefaultValue>
+    <Label>Файл</Label>
+    <Name>TaskTypeFile</Name>
+    <Type>51</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Исполнитель</Label>
+    <Name>Fullname</Name>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Руководитель</Label>
+    <Name>BossName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Insertion>style="max-width:200px"</Insertion>
+    <Label>Клиент</Label>
+    <Name>ClientName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Тип сделки</Label>
+    <Name>PropertyTypeID</Name>
+    <Type>2</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>Бюджет</Label>
+    <Name>Budget</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Источник</Label>
+    <Name>BasicGroupName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Блок</Label>
+    <Name>BlockLink</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Act>items_modal</Act>
+    <Group>task_checklist_item</Group>
+    <Label>Прогресс</Label>
+    <Modal>1</Modal>
+    <Name>ItemProgress</Name>
+    <Params>TaskID=@TaskID;&amp;Statistic=1</Params>
+    <Type>68</Type>
+    <href>#</href>
+  </Inputs>
+  <Inputs>
+    <Insertion>style="max-width:200px"</Insertion>
+    <Label>Комментарии</Label>
+    <Name>ItemResults</Name>
+    <Type>2</Type>
+    <Wrappable>1</Wrappable>
+  </Inputs>
+  <Inputs>
+    <Label>Начало</Label>
+    <Name>DateTimeStart</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Class>@DateEndClass;</Class>
+    <Label>Дедлайн</Label>
+    <Name>DateTimeEnd</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Статус</Label>
+    <Name>ResultName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Дата выполнения</Label>
+    <Name>ResultDate</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

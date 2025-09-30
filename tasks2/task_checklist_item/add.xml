@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Создать действие</FormCaption>
+  <FormID>add</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Создать действие</Label>
+  <Name>add</Name>
+  <Redirect>/task_checklist_item/edit/?id=@insertedID;</Redirect>
+  <SQL>INSERT INTO employee_checklist_item 
+SET ActionName = '@ActionName;';
+  
+##set @insertedID = 'DB::$insertedID;'
+  </SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ActionName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+</form>

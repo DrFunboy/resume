@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Текст запроса к ИИ</FormCaption>
+  <FormID>show_prompt</FormID>
+  <Label>Текст запроса к ИИ</Label>
+  <LightForm>1</LightForm>
+  <Name>show_prompt</Name>
+  <GroupID>ai_prompts</GroupID>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT
+Question
+FROM log_ai_request
+WHERE LogID = '@logID;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Name>Question</Name>
+    <Type>1</Type>
+  </Inputs>
+</form>

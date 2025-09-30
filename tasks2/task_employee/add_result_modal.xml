@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedUsersGroups>ag::admin;, ag::broker;, ag::headBroker;</AllowedUsersGroups>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <FormCaption>Результат задачи</FormCaption>
+  <FormID>add_result_modal</FormID>
+  <GroupID>task_employee</GroupID>
+  <Label>Результат задачи</Label>
+  <Name>add_result_modal</Name>
+  <OnAjaxSubmitFunction>let formID = $('#client_task_tab').data('form-id');
+reloadFormByID(formID);
+$('.modal').modal('hide');</OnAjaxSubmitFunction>
+  <PerPage>50</PerPage>
+  <SQL>UPDATE employee_task SET
+ResultID = '@ResultID;',
+ResultDate = NOW()
+WHERE TaskID = '@TaskID;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Name>ResultID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT ResultID, ResultName FROM employee_task_result WHERE ResultID != 1 </SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <DefaultValue>@TaskID;</DefaultValue>
+    <Name>TaskID</Name>
+    <Type>47</Type>
+  </Inputs>
+</form>

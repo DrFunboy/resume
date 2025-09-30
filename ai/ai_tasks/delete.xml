@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>delete</FormID>
+  <GroupID>ai_tasks</GroupID>
+  <Label>Удалить</Label>
+  <Name>delete</Name>
+  <SQL>UPDATE ai_tasks SET Active=0
+    WHERE TaskID='@id;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно удалено!</SuccessMsg>
+</form>

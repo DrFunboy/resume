@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>delete</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Удалить</Label>
+  <Name>delete</Name>
+  <SQL>
+    delete from employee_checklist_item where ItemID='@id;';
+  </SQL>
+  <SubmitBtn>1</SubmitBtn>
+</form>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>ai_tasks_questions</GroupID>
+  <Label>Вопросы по задаче</Label>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>100</PerPage>
+  <SQLselect>    SELECT atqq.ID, qq.QuestionName, qq.QuestionText, qqt.TypeName FROM ai_tasks_questions atqq
+    LEFT JOIN ai_questions qq ON qq.ID = atqq.QuestionID
+    LEFT JOIN ai_questions_types qqt ON qqt.ID = qq.TypeID
+    WHERE atqq.TaskID = '@id;'
+  </SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Label>Тип вопроса</Label>
+    <Name>TypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Название вопроса</Label>
+    <Name>QuestionName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Текст вопроса</Label>
+    <Name>QuestionText</Name>
+    <Type>1</Type>
+  </Inputs>
+</form>

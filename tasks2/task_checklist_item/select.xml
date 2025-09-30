@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Действия в чеклистах</Label>
+  <LightForm>1</LightForm>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT
+  ecli.ItemID,
+  ecli.ActionName,
+  drawTime(ecli.DeadlineMinute*60) as DeadlineMinute,
+  ecl.ListName,
+  ecli.SortIndex
+FROM employee_checklist_item ecli
+LEFT JOIN employee_checklist ecl ON ecl.ListID = ecli.ListID
+ORDER BY ecli.ActionName</SQLselect>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ActionName</Name>
+    <RawValue>1</RawValue>
+    <Type>63</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Чеклист</Label>
+    <Name>ListName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Период выполнения</Label>
+    <Name>DeadlineMinute</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Сортировка</Label>
+    <Name>SortIndex</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

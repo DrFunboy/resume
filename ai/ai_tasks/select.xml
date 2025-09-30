@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;,u::CAPABILITY_AI_TASK_VIEW;,u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>ai_tasks</GroupID>
+  <Label>Задачи для звонков</Label>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>100</PerPage>
+  <SQLselect>SELECT at.TaskID,
+  at.TaskName,
+  at.DateStart,
+  at.DateEnd,
+  GROUP_CONCAT(DISTINCT am.Name ORDER BY am.ID ASC SEPARATOR '&lt;br&gt;') AS AiModels,
+  at.Prompt,
+  GROUP_CONCAT(DISTINCT ict.`Comment` ORDER BY atct.ID ASC SEPARATOR '&lt;br&gt;') AS CallTypeName,
+  IF(at.active AND CURDATE() BETWEEN at.DateStart AND COALESCE(at.DateEnd, CURDATE()), 'Да', '') AS Active,
+  aip.PromptName
+FROM ai_tasks at
+LEFT JOIN ai_tasks_ai_models atm ON atm.TaskID = at.TaskID
+LEFT JOIN ai_models am ON am.ID = atm.AIModelID
+LEFT JOIN ai_tasks_qc_calls_types atct ON atct.TaskID = at.TaskID
+LEFT JOIN ip_calls_type ict ON ict.CallType = atct.CallTypeID
+LEFT JOIN ai_prompts aip ON aip.PromptID = at.PromptID
+WHERE at.TypeID = 1
+  GROUP BY at.TaskID
+  ORDER BY at.active, at.TaskName
+  </SQLselect>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>TaskName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>С даты</Label>
+    <Name>DateStart</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>По дату</Label>
+    <Name>DateEnd</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>ИИ-модели</Label>
+    <Name>AiModels</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Типы звонков</Label>
+    <Name>CallTypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Контекст</Label>
+    <Name>PromptName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Запрос</Label>
+    <Name>Prompt</Name>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Активна</Label>
+    <Name>Active</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

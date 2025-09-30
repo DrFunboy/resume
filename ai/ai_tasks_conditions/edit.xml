@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_tasks_conditions</GroupID>
+  <Label>Редактировать</Label>
+  <Name>edit</Name>
+  <Redirect>type=ai_tasks_conditions&amp;act=select&amp;id=@masterid;</Redirect>
+  <SQL>UPDATE ai_tasks_conditions SET ConditionID='@ConditionID;' WHERE ID='@id;'</SQL>
+  <SQLselect>
+    SELECT * FROM ai_tasks_conditions WHERE ID='@id;'
+  </SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно обновлено!</SuccessMsg>
+  <Inputs>
+    <Label>Условие</Label>
+    <Name>ConditionID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT ID, Name FROM ai_conditions WHERE Active = 1</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

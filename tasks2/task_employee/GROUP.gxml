@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group>
+  <Active>1</Active>
+  <MenuName>Задачи сотрудников</MenuName>
+  <Name>task_employee</Name>
+  <ParentName>task</ParentName>
+</group>

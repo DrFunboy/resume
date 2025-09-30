@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Редактировать действие</FormCaption>
+  <FormID>edit</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Редактировать действие</Label>
+  <Name>edit</Name>
+  <Redirect>/task_checklist_item/select</Redirect>
+  <SQL>UPDATE employee_checklist_item SET
+  ActionName = '@ActionName;',
+  DeadlineMinute = '@DeadlineMinute;',
+  ListID = '@ListID;',
+  SortIndex = '@SortIndex;'
+WHERE ItemID = '@id;'</SQL>
+  <SQLselect>SELECT
+  ItemID,
+  ActionName,
+  DeadlineMinute,
+  ListID,
+  SortIndex
+FROM employee_checklist_item
+WHERE ItemID = '@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ActionName</Name>
+    <Needed>1</Needed>
+    <RawValue>1</RawValue>
+    <Type>63</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Чеклист</Label>
+    <Name>ListID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT ListID, ListName FROM employee_checklist ORDER BY ListName</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Времени на выполнение</Label>
+    <Name>DeadlineMinute</Name>
+    <Type>70</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Сортировка</Label>
+    <Name>SortIndex</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

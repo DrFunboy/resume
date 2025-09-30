@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group>
+  <Active>1</Active>
+  <MenuName>Чеклисты</MenuName>
+  <Name>task_checklist</Name>
+  <ParentName>task</ParentName>
+</group>

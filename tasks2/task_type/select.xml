@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>task_type</GroupID>
+  <Label>Типы задач</Label>
+  <LightForm>1</LightForm>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <OverflowX>1</OverflowX>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT 
+  ett.TaskTypeID,
+  ett.TaskTypeName,
+  ett.Description,
+  IF(ett.Active, 'Да', 'Нет') AS Active,
+  GROUP_CONCAT(ecl.ListName ORDER BY ecl.ListName SEPARATOR '&lt;br&gt;') AS ListName,
+  etc.ConditionName,
+  IF(ett.PostponeDays != 0, ett.PostponeDays, 'Нет') AS Postpone,
+  IF(ett.NotifyCreate = 1, 'Да', 'Нет') AS NotifyCreate,
+  IF(ett.NotifyDeadline = 1, 'Да', 'Нет') AS NotifyDeadline
+FROM employee_task_type ett
+LEFT JOIN employee_task_type_checklist ettcl 
+  ON ettcl.TaskTypeID = ett.TaskTypeID
+LEFT JOIN employee_checklist ecl 
+  ON ecl.ListID = ettcl.ListID
+LEFT JOIN employee_task_condition etc 
+  ON etc.ConditionID = ett.ConditionID
+GROUP BY ett.TaskTypeID
+ORDER BY ett.Active DESC, ett.TaskTypeName</SQLselect>
+  <TableName>employee_task_type</TableName>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>TaskTypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Условие запуска</Label>
+    <Name>ConditionName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Чеклисты</Label>
+    <Name>ListName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание</Label>
+    <Name>Description</Name>
+    <Type>1</Type>
+    <Wrappable>1</Wrappable>
+  </Inputs>
+  <Inputs>
+    <Label>Файл</Label>
+    <Name>TaskTypeFile</Name>
+    <Type>51</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Отложить на дней</Label>
+    <Name>Postpone</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Уведомлять о создании</Label>
+    <Name>NotifyCreate</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Уведомлять о дедлайне</Label>
+    <Name>NotifyDeadline</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Активна</Label>
+    <Name>Active</Name>
+    <Type>4</Type>
+  </Inputs>
+</form>

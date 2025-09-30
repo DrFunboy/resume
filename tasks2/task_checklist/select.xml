@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>task_checklist</GroupID>
+  <Label>Чеклисты</Label>
+  <LightForm>1</LightForm>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT
+  ecl.ListID,
+  ecl.ListName,
+  GROUP_CONCAT(ecli.ActionName ORDER BY ecli.ItemID ASC SEPARATOR '&lt;br&gt;') AS ChecklistItems
+FROM employee_checklist ecl
+LEFT JOIN employee_checklist_item ecli ON ecli.ListID = ecl.ListID
+GROUP BY ecl.ListID
+ORDER BY ecl.ListName</SQLselect>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ListName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Действия</Label>
+    <Name>ChecklistItems</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

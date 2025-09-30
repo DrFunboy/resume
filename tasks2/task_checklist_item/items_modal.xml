@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;, ag::broker;, ag::headBroker;</AllowedUsersGroups>
+  <FormCaption>Действия</FormCaption>
+  <FormID>items_modal</FormID>
+  <GroupID>task_checklist_item</GroupID>
+  <Label>Действия</Label>
+  <Name>items_modal</Name>
+  <OnAjaxInitFunction>$('#modalForm_task_checklist_item_items_modal').one('hide.bs.modal', function () {
+  let formID = $('#client_task_tab').data('form-id');
+  reloadFormByID(formID);
+})</OnAjaxInitFunction>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT
+  etcls.StatusID,
+  etcls.DateEnd,
+  etcls.Description,
+  etcls.Status,
+  etcls.DateStatus,
+  CASE
+    WHEN etcls.Result = 1 THEN "Отрицательный"
+    WHEN etcls.Result = 10 THEN "Положительный"
+    ELSE "Не определен"
+  END AS Result,
+  etcls.ResultText,
+  IF(etcls.Status = 0, 'fa-check btn-success', 'fa-check') as BtnClass,
+  IF(etcls.Status = 1, 'text-success', '') as trClass,
+  et.ResultID
+FROM employee_task_checklist_status etcls
+INNER JOIN employee_checklist_item ecli ON ecli.ItemID = etcls.ItemID
+INNER JOIN employee_task et ON et.TaskID = etcls.TaskID
+WHERE etcls.TaskID = '@TaskID;'
+ORDER BY ecli.SortIndex</SQLselect>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>Description</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Дедлайн</Label>
+    <Name>DateEnd</Name>
+    <Style>width:100px</Style>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Дата выполнения</Label>
+    <Name>DateStatus</Name>
+    <Style>width:150px</Style>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Результат</Label>
+    <Name>Result</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Комментарий</Label>
+    <Name>ResultText</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Act>change_status_modal</Act>
+    <Class>btn btn-xs btn-icon fa @BtnClass;</Class>
+    <Group>task_checklist_item</Group>
+    <Modal>1</Modal>
+    <Name>ChangeStatus</Name>
+    <Params>StatusID=@StatusID;</Params>
+    <Type>68</Type>
+    <VisConditions>Statistic!=1&amp;&amp;ResultID=1</VisConditions>
+  </Inputs>
+</form>

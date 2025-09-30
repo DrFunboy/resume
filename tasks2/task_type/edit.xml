@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Редактировать задачу</FormCaption>
+  <FormID>edit</FormID>
+  <GroupID>task_type</GroupID>
+  <Label>Редактировать задачу</Label>
+  <Name>edit</Name>
+  <Redirect>/task_type/select</Redirect>
+  <SQL>UPDATE employee_task_type SET
+  Active = '@Active;',
+  TaskTypeName = '@TaskTypeName;',
+  Description = '@Description;',
+  DeadlineMinute = '@DeadlineMinute;',
+  PostponeDays = '@PostponeDays;',
+  ConditionID = '@ConditionID;',
+  ClientHistoryDate = IF( '@ClientHistoryDate;' = 0,
+    NULL,
+    FROM_UNIXTIME('@ClientHistoryDate;', '%Y-%m-%d')
+  ),
+  ConditionDate = IF( '@ConditionDate;' = 0,
+    NULL,
+    FROM_UNIXTIME('@ConditionDate;', '%Y-%m-%d')
+  ),
+  NotifyCreate = '@NotifyCreate;',
+  NotifyDeadline = '@NotifyDeadline;',
+  BudgetFrom = '@BudgetFrom;',
+  BudgetTo = '@BudgetTo;',
+  ClientType = '@ClientType;',
+  ClientSource = '@ClientSource;',
+  ChangeUser = '@ChangeUser;',
+  LinkType = '@LinkType;'
+WHERE TaskTypeID='@id;'</SQL>
+  <SQLselect>SELECT
+  TaskTypeName,
+  TaskTypeID,
+  Active,
+  Description,
+  DeadlineMinute,
+  PostponeDays,
+  ConditionID,
+  unix_timestamp(ClientHistoryDate) as ClientHistoryDate,
+  unix_timestamp(ConditionDate) as ConditionDate,
+  NotifyCreate,
+  NotifyDeadline,
+  BudgetFrom,
+  BudgetTo,
+  ClientType,
+  ClientSource,
+  ChangeUser,
+  LinkType
+FROM employee_task_type
+WHERE TaskTypeID = '@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>TaskTypeName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Тип задачи</Label>
+    <Name>LinkType</Name>
+    <SQL>array( [1, 'Работа с клиентом'], [2,'Индивидуальная'] )</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Условие запуска</Label>
+    <Name>ConditionID</Name>
+    <NeededConditions>LinkType=1</NeededConditions>
+    <SQL>SELECT ConditionID, ConditionName FROM employee_task_condition</SQL>
+    <Type>29</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Calendar>1</Calendar>
+    <Label>Дата начала работы с клиентом</Label>
+    <Name>ClientHistoryDate</Name>
+    <NeededConditions>LinkType=1</NeededConditions>
+    <Type>30</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Calendar>1</Calendar>
+    <Label>Дата начала условия</Label>
+    <Name>ConditionDate</Name>
+    <NeededConditions>LinkType=2</NeededConditions>
+    <Type>30</Type>
+  </Inputs>
+  <Inputs>
+    <ColSpan>3</ColSpan>
+    <Label>Бюджет, тыс</Label>
+    <Name>BudgetLabel</Name>
+    <Type>46</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>от</Label>
+    <Name>BudgetFrom</Name>
+    <Type>64</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>до</Label>
+    <Name>BudgetTo</Name>
+    <Type>64</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>Тип клиента</Label>
+    <Name>ClientType</Name>
+    <SQL>SELECT TypeID,Name FROM block_property_type</SQL>
+    <Type>29</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>Источник клиента</Label>
+    <Name>ClientSource</Name>
+    <SQL>SELECT ID,Name FROM calls_sources_groups WHERE Active = 1 AND BasicGroup = 1 ORDER BY Name</SQL>
+    <Type>29</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Act>post_select</Act>
+    <Group>task_type</Group>
+    <Label>Должность сотрудника</Label>
+    <Name>UserPost</Name>
+    <Type>31</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Создавать для новых сотрудников</Label>
+    <Name>CreateForNewUsers</Name>
+    <Type>4</Type>
+    <VisConditions>LinkType=2</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Act>checklist_select</Act>
+    <Group>task_type</Group>
+    <Label>Чеклисты</Label>
+    <Name>Checklist</Name>
+    <Type>31</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Времени на выполнение</Label>
+    <Name>DeadlineMinute</Name>
+    <Type>70</Type>
+  </Inputs>
+  <Inputs>
+    <Label>На сколько дней можно отложить</Label>
+    <Name>PostponeDays</Name>
+    <Type>66</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание</Label>
+    <Name>Description</Name>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Файл с описанием</Label>
+    <Name>TaskTypeFile</Name>
+    <Type>51</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Переносить при смене брокера</Label>
+    <Name>ChangeUser</Name>
+    <Type>4</Type>
+    <VisConditions>LinkType=1</VisConditions>
+  </Inputs>
+  <Inputs>
+    <Label>Уведомлять о создании</Label>
+    <Name>NotifyCreate</Name>
+    <Type>4</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Уведомлять об истечении срока выполнения</Label>
+    <Name>NotifyDeadline</Name>
+    <Type>4</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Статус активности</Label>
+    <Name>Active</Name>
+    <Type>4</Type>
+  </Inputs>
+</form>

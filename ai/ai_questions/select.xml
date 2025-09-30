@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>add</AddBtn>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;,u::CAPABILITY_AI_TASK_VIEW;,u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>ai_questions</GroupID>
+  <Label>Вопросы</Label>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>100</PerPage>
+  <SQLselect>SELECT 
+  aiq.ID, 
+  aiq.TypeID, 
+  aiq.QuestionKey, 
+  aiq.QuestionName, 
+  aiq.QuestionText, 
+  aiqt.TypeName
+FROM ai_questions aiq
+LEFT JOIN ai_questions_types aiqt ON aiqt.ID = aiq.TypeID
+WHERE
+  if('@TypeID;'='', 1=1, aiq.TypeID='@TypeID;')
+ORDER BY TypeName, QuestionText</SQLselect>
+  <Inputs>
+    <Label>Тип вопроса</Label>
+    <Name>TypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание вопроса</Label>
+    <Name>QuestionName</Name>
+    <Style>width: 200px;</Style>
+    <Type>2</Type>
+    <Wrappable>1</Wrappable>
+  </Inputs>
+  <Inputs>
+    <Label>Текст вопроса</Label>
+    <Name>QuestionText</Name>
+    <Type>1</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Ключ вопроса</Label>
+    <Name>QuestionKey</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

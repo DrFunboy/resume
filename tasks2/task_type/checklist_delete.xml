@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <FormID>checklist_delete</FormID>
+  <GroupID>task_type</GroupID>
+  <LightForm>1</LightForm>
+  <Name>checklist_delete</Name>
+  <PerPage>50</PerPage>
+  <SQL>DELETE FROM employee_task_type_checklist WHERE ID='@id;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+</form>

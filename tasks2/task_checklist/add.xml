@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Создать чеклист</FormCaption>
+  <FormID>add</FormID>
+  <GroupID>task_checklist</GroupID>
+  <Label>Создать чеклист</Label>
+  <Name>add</Name>
+  <Redirect>/task_checklist/select</Redirect>
+  <SQL>INSERT INTO employee_checklist SET
+  ListName = '@ListName;',
+  CreateUserID = '$auth-&gt;user;',
+  CreateDate = now();
+
+##set @insertedID = 'DB::$insertedID;'
+  </SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ListName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+</form>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_VIEW;,u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <AddBtn>add</AddBtn>
+  <DropBtn>delete</DropBtn>
+  <EditBtn>edit</EditBtn>
+  <FormID>select</FormID>
+  <GroupID>ai_questions_types</GroupID>
+  <Label>Типы вопросов</Label>
+  <Menu_item>1</Menu_item>
+  <Name>select</Name>
+  <PerPage>100</PerPage>
+  <SQLselect>
+    SELECT ID, TypeKey, TypeName, Description FROM ai_questions_types ORDER BY TypeName
+  </SQLselect>
+  <Inputs>
+    <Label>Ключ типа</Label>
+    <Name>TypeKey</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Название типа</Label>
+    <Name>TypeName</Name>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание</Label>
+    <Name>Description</Name>
+    <Type>1</Type>
+  </Inputs>
+</form>

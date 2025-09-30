@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>add</FormID>
+  <GroupID>ai_tasks_ai_models</GroupID>
+  <Label>Добавить</Label>
+  <Name>add</Name>
+  <Redirect>type=ai_tasks_ai_models&amp;act=select&amp;id=@id;</Redirect>
+  <SQL>insert into ai_tasks_ai_models set AIModelID='@AIModelID;', TaskID='@id;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно добавлено!</SuccessMsg>
+  <TableName>ai_tasks_ai_models</TableName>
+  <Inputs>
+    <Label>Модель</Label>
+    <Name>AIModelID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT am.ID, am.Name FROM ai_models am WHERE active = 1</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

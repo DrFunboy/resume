@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AddBtn>checklist_add</AddBtn>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <DropBtn>checklist_delete</DropBtn>
+  <FormID>checklist_select</FormID>
+  <GroupID>task_type</GroupID>
+  <LightForm>1</LightForm>
+  <Name>checklist_select</Name>
+  <PerPage>50</PerPage>
+  <SQLselect>SELECT ettcl.ID, ecl.ListName
+FROM employee_task_type_checklist ettcl
+JOIN employee_checklist ecl ON ecl.ListID = ettcl.ListID
+WHERE ettcl.TaskTypeID = '@id;'
+GROUP BY ettcl.ListID
+ORDER BY ecl.ListName</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>ListName</Name>
+    <Type>2</Type>
+  </Inputs>
+</form>

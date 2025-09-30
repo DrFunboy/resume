@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>post_add</FormID>
+  <GroupID>task_type</GroupID>
+  <LightForm>1</LightForm>
+  <Name>post_add</Name>
+  <PerPage>50</PerPage>
+  <Redirect>type=task_type&amp;act=post_select&amp;id=@id;</Redirect>
+  <SQL>INSERT IGNORE INTO employee_task_type_post
+SET PostID = '@PostID;', TaskTypeID = '@id;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <Inputs>
+    <Label>Должность</Label>
+    <Name>PostID</Name>
+    <Needed>1</Needed>
+    <SQL>
+      SELECT
+        ep.PostID, ep.PostName
+      FROM employees_posts ep
+      LEFT JOIN employee_task_type_post ettp
+        ON ettp.TaskTypeID = '@id;'
+        AND ettp.PostID = ep.PostID
+      WHERE
+        ettp.ID IS NULL
+        AND ep.PostID IN (@TaskPosts;)
+      ORDER BY ep.PostName</SQL>
+    <Type>29</Type>
+  </Inputs>
+</form>

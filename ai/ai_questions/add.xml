@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;,u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>add</FormID>
+  <GroupID>ai_questions</GroupID>
+  <Label>Добавить вопрос</Label>
+  <Name>add</Name>
+  <Redirect>/ai_questions/select</Redirect>
+  <SQL>INSERT INTO ai_questions SET
+  TypeID='@TypeID;',
+  QuestionKey='@QuestionKey;',
+  QuestionName='@QuestionName;',
+  QuestionText='@QuestionText;'</SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Тип вопроса</Label>
+    <Name>TypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT ID, TypeName FROM ai_questions_types ORDER BY ID ASC</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Ключ вопроса</Label>
+    <Name>QuestionKey</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание вопроса</Label>
+    <Name>QuestionName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Текст вопроса</Label>
+    <Name>QuestionText</Name>
+    <Needed>1</Needed>
+    <Type>1</Type>
+  </Inputs>
+</form>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group>
+  <Active>1</Active>
+  <MenuName>Задачи для звонков</MenuName>
+  <Name>ai_tasks</Name>
+  <ParentName>ai</ParentName>
+</group>

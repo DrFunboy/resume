@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<group>
+  <Active>1</Active>
+  <MenuName>Типы задач</MenuName>
+  <Name>task_type</Name>
+  <ParentName>task</ParentName>
+</group>

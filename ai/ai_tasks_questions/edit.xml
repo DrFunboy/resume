@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AjaxForm>1</AjaxForm>
+  <AllowedCapability>u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;,u::CAPABILITY_AI_TASK_EDIT;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_tasks_questions</GroupID>
+  <Label>Редактировать</Label>
+  <Name>edit</Name>
+  <Redirect>type=ai_tasks_questions&amp;act=select&amp;id=@masterid;</Redirect>
+  <SQL>UPDATE ai_tasks_questions SET QuestionID='@QuestionID;' WHERE ID='@id;';
+    ##^logTable('ai_tasks_questions', 2, '@id;');</SQL>
+  <SQLselect>SELECT aitq.ID, aitq.QuestionID, aiq.TypeID FROM ai_tasks_questions aitq
+LEFT JOIN ai_questions aiq ON aiq.ID = aitq.QuestionID
+WHERE aitq.ID='@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно обновлено!</SuccessMsg>
+  <Inputs>
+    <Label>Тип вопроса</Label>
+    <Name>TypeID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT ID, TypeName as Name FROM ai_questions_types ORDER BY ID</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Вопрос</Label>
+    <Name>QuestionID</Name>
+    <Needed>1</Needed>
+    <SQL>SELECT
+        aiq.ID,
+        if(aiq.QuestionName != '', aiq.QuestionName, aiq.QuestionText) as QuestionText,
+        '',
+        aiq.TypeID
+      FROM ai_questions aiq
+      LEFT JOIN ai_tasks_questions aitq ON aitq.QuestionID=aiq.ID AND aitq.TaskID='@masterid;'
+      ORDER BY ID ASC</SQL>
+    <Type>29</Type>
+  </Inputs>
+  <Inputs>
+    <DefaultValue>
+      function hideQuestions(curVal) {
+        $("#QuestionID option").each(function() {
+          if($(this).attr('data-item') &amp;&amp; $(this).attr('data-item')!=curVal)
+          $(this).hide(); else
+          $(this).show();
+        });
+        $('#QuestionID').selectpicker('refresh');
+      }
+      hideQuestions($('#TypeID').val());
+      $('#TypeID').change(function(){
+        $("#QuestionID").val('');
+        hideQuestions($(this).val());
+      });
+    </DefaultValue>
+    <Name>Script</Name>
+    <Type>55</Type>
+  </Inputs>
+</form>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_EDIT_EMPLOYEE_TASK;</AllowedCapability>
+  <AllowedUsers>45731</AllowedUsers>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormCaption>Создать задачу</FormCaption>
+  <FormID>add</FormID>
+  <GroupID>task_type</GroupID>
+  <Label>Создать задачу</Label>
+  <Name>add</Name>
+  <Redirect>/task_type/edit/?id=@insTaskID;</Redirect>
+  <SQL>INSERT INTO employee_task_type SET
+  TaskTypeName='@TaskName;',
+  CreateUserID = '$auth-&gt;user;',
+  CreateDate = now();
+  
+##set @insTaskID = 'DB::$insertedID;'
+  </SQL>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название</Label>
+    <Name>TaskName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+</form>

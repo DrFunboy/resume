@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <AllowedCapability>u::CAPABILITY_AI_TASK_EDIT;,u::CAPABILITY_POST_DEVELOPMENT_DIRECTORS;</AllowedCapability>
+  <AllowedUsersGroups>ag::admin;</AllowedUsersGroups>
+  <FormID>edit</FormID>
+  <GroupID>ai_questions_types</GroupID>
+  <Label>Редактировать вопрос</Label>
+  <Name>edit</Name>
+  <Redirect>/ai_questions_types/select</Redirect>
+  <SQL>UPDATE ai_questions_types SET
+    TypeName='@TypeName;',
+    TypeKey='@TypeKey;',
+    Description='@Description;'
+    WHERE ID='@id;'</SQL>
+  <SQLselect>SELECT * FROM ai_questions_types where ID='@id;'</SQLselect>
+  <SubmitBtn>1</SubmitBtn>
+  <SuccessMsg>Успешно сохранено!</SuccessMsg>
+  <Inputs>
+    <Label>Название типа</Label>
+    <Name>TypeName</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Ключ типа</Label>
+    <Name>TypeKey</Name>
+    <Needed>1</Needed>
+    <Type>2</Type>
+  </Inputs>
+  <Inputs>
+    <Label>Описание</Label>
+    <Name>Description</Name>
+    <Needed>1</Needed>
+    <Type>1</Type>
+  </Inputs>
+</form>
