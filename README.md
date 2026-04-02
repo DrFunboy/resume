@@ -30,3 +30,5 @@ vk - VK Miniapp в котором администратор может прив
 worksheet builder - универсальный построитель анкет из json (аналог google form)
 
 apps script - бронирование встречи и создание мероприятия в google calendar при помощи apps script
+
+Laravel/Console API parser - Рекурсивный парсер API на базе Laravel 12
