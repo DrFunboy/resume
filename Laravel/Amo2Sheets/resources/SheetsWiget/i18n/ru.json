@@ -1,0 +1,18 @@
+{
+    "widget": {
+        "name": "Amo2Sheets",
+        "short_description": "Синхронизация сделок с Google Таблицами",
+        "description": "Синхронизация сделок между воронками и Google Таблицами",
+        "tour_description": "Синхронизация сделок с Google Таблицами"
+    },
+    "settings": {
+        "secret_key":  "Секретный ключ"
+    },
+    "advanced": {
+        "title": "Выгрузка в Google Таблицы"
+    },
+    "error": {
+        "no_response": "Удалённый сервер не отвечает, обратитесь в поддержку"
+    }
+
+}

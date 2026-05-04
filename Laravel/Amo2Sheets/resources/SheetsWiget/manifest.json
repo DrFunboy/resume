@@ -1,0 +1,42 @@
+{
+    "widget": {
+        "name": "widget.name",
+        "description": "widget.description",
+        "short_description": "widget.short_description",
+        "version": "0.1.0",
+        "interface_version": 2,
+        "init_once": true,
+        "locale": ["ru"],
+        "installation": true,
+        "support": {
+            "link": "https://t.me/DrFunboy",
+            "email": "panfandrdev@gmail.com"
+        }
+    },
+    "locations": [
+        "settings",
+        "advanced_settings",
+        "everywhere"
+    ],
+    "settings": {
+        "secret_key": {
+            "name": "settings.secret_key",
+            "type": "text",
+            "required": false
+        }
+    },
+    "tour": {
+        "is_tour": true,
+        "tour_images": {
+            "ru": [
+                "/images/logo_main.png",
+                "/images/logo_main.png",
+                "/images/logo_main.png"
+            ]
+        },
+        "tour_description": "widget.tour_description"
+    },
+    "advanced": {
+        "title": "advanced.title"
+    }
+}

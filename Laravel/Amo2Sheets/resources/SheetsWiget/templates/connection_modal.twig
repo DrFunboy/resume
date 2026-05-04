@@ -1,0 +1,54 @@
+<div id="amo2sheets_modal">
+    {% if uuid %}
+        <h2 class="ui-title ui-title--xl">Редактировать выгрузку</h2>
+    {% else %}
+        <h2 class="ui-title ui-title--xl">Создать выгрузку</h2>
+    {% endif %}
+
+
+    <form id="a2s-form_connection" style="margin-top: 1rem">
+        <table class="a2s-table">
+            <tbody>
+            <tr>
+                <td class="a2s-cell_title"><label for="a2s-filter_id">Воронка</label></td>
+                <td>
+                    <select id="a2s-filter_id" name="filter_id" class="control--select--button a2s-select" required>
+                        <option value="">Не выбрано</option>
+                        {% for filter in filterData %}
+                            <option value="{{ filter.id }}" {{ filter_id == filter.id? 'selected' : '' }}>
+                                {{ filter.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label for="a2s-sheet_id">Google Таблица</label>
+                </td>
+                <td>
+                    <textarea id="a2s-sheet_id" name="sheet_id" class="text-input" required>
+                        {{ sheet_id }}
+                    </textarea>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="d-flex">
+            <button type="submit" class="button-input button-input_blue">Сохранить</button>
+            {% if uuid %}
+                <button type="button" class="button-input delete_connection" data-uuid="{{ uuid }}">
+                    <span class="button-input-inner">
+                        <svg class="svg-icon svg-common--trash-dims">
+                            <use xlink:href="#common--trash"></use>
+                        </svg>
+                        <span class="button-input-inner__text">Удалить</span>
+                    </span>
+                </button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
