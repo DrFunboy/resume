@@ -32,3 +32,5 @@ worksheet builder - универсальный построитель анкет
 apps script - бронирование встречи и создание мероприятия в google calendar при помощи apps script
 
 Laravel/Console API parser - Рекурсивный парсер API на базе Laravel 12
+
+Laravel/Amo2Sheets - Интеграция AmoCRM с Google Sheets на базе Laravel 13
