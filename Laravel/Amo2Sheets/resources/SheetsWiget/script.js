@@ -11,10 +11,16 @@ define([
                 filterKeys: {},
                 connectionKeys: {},
                 userKeys: {},
+                connectionFields: {}
             },
             system = self.system(),
             endpoint = 'https://7263913-ce143862.twc1.net',
-            endpointAPI = endpoint+'/api/sheets/';
+            endpointAPI = endpoint+'/api/sheets/',
+            fieldTypeNames = {
+                other: 'Другой',
+                deal: 'Сделка',
+                contact: 'Контакт',
+            };
 
         document.A2S = A2S;
 
@@ -39,10 +45,13 @@ define([
         function storeFilter(uuid = null)
         {
             let oldFilter = uuid? A2S.filterKeys[uuid]: {
-                pipeline_id: window.location.pathname.split('/')[3],
                 filter_url: window.location.search,
                 uuid: uuid
             };
+            if (new URLSearchParams(window.location.search).has('skip_filter')){
+                new Modal()._showError('Фильтры не заданы', false);
+                return false;
+            }
 
             self.getTemplate('filter_modal', {}, function (template) {
                 let modalBody = template.render(oldFilter),
@@ -80,7 +89,7 @@ define([
                             },
                             success: function () {
                                 confirmModal.destroy();
-                                $(document).trigger('a2s-render_settings');
+                                $(document).trigger('a2s_render-settings');
                                 APP.notifications.show_message({
                                     header: self.i18n('advanced').title,
                                     text: 'Выгрузка удалена',
@@ -91,7 +100,7 @@ define([
                 })
 
                 // Нажал на "сохранить"
-                modal.$modal.on('submit', '#a2s-form_filter', function (e){
+                modal.$modal.on('submit', '#a2s_form-filter', function (e){
                     e.preventDefault();
 
                     modal.$modal.find('button').addClass('button-input-disabled');
@@ -102,7 +111,6 @@ define([
                         method: 'POST',
                         data: {
                             domain: system.domain,
-                            pipeline_id: oldFilter.pipeline_id,
                             filter_url: oldFilter.filter_url,
                             uuid: uuid,
                             name: formData.filter_name.value,
@@ -111,103 +119,10 @@ define([
                         },
                         success: function () {
                             modal.destroy();
-                            $(document).trigger('a2s-render_settings');
+                            $(document).trigger('a2s_render-settings');
                             APP.notifications.show_message({
                                 header: self.i18n('advanced').title,
                                 text: 'Фильтр сохранён',
-                            });
-                        },
-                        error: function (response){
-                            new Modal()._showError(response.responseJSON.message, false);
-                            modal.$modal.find('button').removeClass('button-input-disabled');
-                        }
-                    });
-                });
-            });
-        }
-
-        /**
-         * Редактирование или создание выгрузки
-         * @param uuid
-         */
-        function storeConnection(uuid = null)
-        {
-            // TODO Редактор полей
-            let oldConnection = uuid ? A2S.connectionKeys[uuid] : {};
-
-            self.getTemplate('connection_modal', {}, function (template) {
-                let modalBody = template.render(
-                        $.extend(oldConnection, {
-                            filterData: A2S.filterKeys
-                        })
-                    ),
-                    modal = new Modal({
-                        init: function (modalSrc) {
-                            modalSrc
-                                .trigger('modal:loaded')
-                                .html(modalBody)
-                                .trigger('modal:centrify');
-                        }
-                    });
-
-                // Нажал на "удалить"
-                modal.$modal.on('click', '.delete_connection', function (){
-                    modal.destroy();
-                    let confirmModal = new ConfirmModal({
-                        disable_overlay_click: false,
-                        accept_text: 'Да',
-                        decline_text: 'Отмена',
-                        text: 'Удаление выгрузки',
-                        message: [
-                            {
-                                text: 'Выгрузка будет удалена, продолжить?',
-                            },
-                        ],
-                    });
-
-                    confirmModal.options.accept = function () {
-                        $.ajax({
-                            url: endpointAPI+'connection',
-                            method: 'DELETE',
-                            data: {
-                                domain: system.domain,
-                                uuid: uuid
-                            },
-                            success: function () {
-                                confirmModal.destroy();
-                                $(document).trigger('a2s-render_settings');
-                                APP.notifications.show_message({
-                                    header: self.i18n('advanced').title,
-                                    text: 'Выгрузка удалена',
-                                });
-                            }
-                        });
-                    }
-                })
-
-                // Нажал на "сохранить"
-                modal.$modal.on('submit', '#a2s-form_connection', function (e){
-                    e.preventDefault();
-
-                    modal.$modal.find('button').addClass('button-input-disabled');
-                    let formData = arrToObj($(e.currentTarget).serializeArray(), 'name');
-
-                    $.ajax({
-                        url: endpointAPI+'connection',
-                        method: 'POST',
-                        data: {
-                            uuid: uuid,
-                            domain: system.domain,
-                            filter_id: formData.filter_id.value,
-                            amouser_id: system.amouser_id,
-                            sheet_id: formData.sheet_id.value
-                        },
-                        success: function () {
-                            modal.destroy();
-                            $(document).trigger('a2s-render_settings');
-                            APP.notifications.show_message({
-                                header: self.i18n('advanced').title,
-                                text: 'Выгрузка сохранена',
                             });
                         },
                         error: function (response){
@@ -233,10 +148,8 @@ define([
 
         this.callbacks = {
             render: function () {
-                console.log('render');
-                let area = self.system().area;
-                if (area === 'outer_space' && APP.getWidgetsArea() === 'leads-pipeline'){
-                    let buttonExist = $('#a2s-save_filter')[0];
+                if (['leads-pipeline', 'leads'].includes(APP.getWidgetsArea())){
+                    let buttonExist = $('#a2s_save-filter')[0];
                     if (!buttonExist) {
                         let ul = $('ul.context-menu-pipeline');
                         self.getTemplate('save_filter', {}, function (template) {
@@ -244,8 +157,8 @@ define([
                             ul.append(saveFilter);
                         });
 
-                        $(document).off('click', '#a2s-save_filter');
-                        $(document).on('click', '#a2s-save_filter', function (){
+                        $(document).off('click', '#a2s_save-filter');
+                        $(document).on('click', '#a2s_save-filter', function (){
                             storeFilter();
                         })
                     }
@@ -254,22 +167,21 @@ define([
                 return true;
             },
             init: _.bind(function () {
-                console.log('init');
                 let settings = self.get_settings();
                 if ($('link[href="' + settings.path + '/style.css?v=' + settings.version + '"').length < 1) {
                     $('head').append('<link href="' + settings.path + '/style.css?v=' + settings.version + '" type="text/css" rel="stylesheet">');
                 }
 
-                $(document).on('click', '#amo2sheets_advanced .a2s-tabs_nav_item', function (e){
+                $(document).on('click', '#a2s_advanced .a2s_tabs-nav-item', function (e){
                     let elm = $(e.currentTarget),
-                        elmParent = elm.closest('.a2s-tabs'),
+                        elmParent = elm.closest('.a2s_tabs'),
                         target = elm.data('tab');
 
-                    elmParent.find('.a2s-tabs_nav_item').removeClass('a2s-active');
-                    elmParent.find('.a2s-tabs_pane').removeClass('a2s-active');
+                    elmParent.find('.a2s_tabs-nav-item').removeClass('a2s_active');
+                    elmParent.find('.a2s_tabs-pane').removeClass('a2s_active');
 
-                    elm.addClass('a2s-active');
-                    $('#'+target).addClass('a2s-active');
+                    elm.addClass('a2s_active');
+                    $('#'+target).addClass('a2s_active');
                 });
 
                 return true;
@@ -278,14 +190,13 @@ define([
                 return true;
             },
             settings: function () {
-                console.log('settings');
                 let modalBody = $('.widget-settings__modal.'+self.params.widget_code),
-                settingsArea = modalBody.find('#widget_settings__fields_wrapper');
+                settingsArea = modalBody.find('.widget_settings_block__item_field');
 
                 function buildSettings() {
                     settingsArea.html();
-                    modalBody.off('click', '#a2s-oauth');
-                    modalBody.off('click', '#a2s-oauth_logout');
+                    modalBody.off('click', '#a2s_oauth');
+                    modalBody.off('click', '#a2s_oauth-logout');
 
                     $.ajax({
                         url: endpointAPI+'oauth-check',
@@ -303,7 +214,7 @@ define([
                                 settingsArea.html(oauthButton);
                             });
 
-                            modalBody.on('click', '#a2s-oauth', function () {
+                            modalBody.on('click', '#a2s_oauth', function () {
                                 function successOAuth(e){
                                     if (e.origin !== endpoint) return;
                                     buildSettings();
@@ -318,7 +229,7 @@ define([
                                 window.open(oauthUrl);
                             });
 
-                            modalBody.on('click', '#a2s-oauth_logout', function () {
+                            modalBody.on('click', '#a2s_oauth-logout', function () {
                                 let confirmModal = new ConfirmModal({
                                     disable_overlay_click: false,
                                     accept_text: 'Да',
@@ -396,6 +307,166 @@ define([
             advancedSettings: _.bind(function () {
                 let workArea = $('#work-area-' + self.get_settings().widget_code);
 
+                function storeConnection(uuid = null)
+                {
+                    let oldConnection = uuid ? A2S.connectionKeys[uuid] : {
+                        active: true,
+                        sheet_fields: [{
+                            name: 'empty',
+                            order: 1,
+                            type: 'other'
+                        }]
+                    };
+                    oldConnection.filterData = Object.values(A2S.filterKeys).sort((a, b) => a.name.localeCompare(b.name));
+
+                    $.each(oldConnection.sheet_fields, function (k, field){
+                        field.type_name = fieldTypeNames[field.type];
+                        field.label = field.name;
+                        if (!field.custom) {
+                            field.label = A2S.connectionFields[field.type][field.name].name;
+                        }
+                    })
+
+                    self.getTemplate('connection_edit', {}, function (template) {
+                        let page = template.render(oldConnection);
+                        workArea.html(page);
+
+                        let connectionArea = $('#a2s_connection-edit');
+                        connectionArea.on('click', '.a2s_add-field', function (){
+                            let order = connectionArea.find('.a2s_field-row').length+1;
+
+                            self.getTemplate('add_field_modal', {}, function (template) {
+                                let modalBody = template.render({
+                                        connectionFields: A2S.connectionFields,
+                                        fieldTypeNames: fieldTypeNames
+                                    }),
+                                    modal = new Modal({
+                                        init: function (modalSrc) {
+                                            modalSrc
+                                                .trigger('modal:loaded')
+                                                .html(modalBody)
+                                                .trigger('modal:centrify');
+                                        }
+                                    });
+
+                                modal.$modal.on('submit', '#a2s_form-add-field', function (e) {
+                                    e.preventDefault();
+                                    let formData = arrToObj($(e.currentTarget).serializeArray(), 'name'),
+                                        fieldCustom = $('#a2s_field-custom').is(':checked'),
+                                        fieldName = fieldCustom? formData['field-name'].value : formData['field-name-select'].value,
+                                        fieldType = formData['field-type'].value;
+
+                                    self.getTemplate('connection_field_row', {}, function (template) {
+                                        let newRow = template.render({field: {
+                                                custom: fieldCustom,
+                                                type: fieldType,
+                                                order: order,
+                                                name: fieldName,
+                                                label: fieldCustom? fieldName: A2S.connectionFields[fieldType][fieldName].name,
+                                                type_name: fieldTypeNames[fieldType]
+                                            }});
+                                        $('#a2s_fields-table').append(newRow);
+
+                                    });
+                                    modal.destroy();
+                                });
+                            });
+                        });
+
+
+                        // Нажал на "удалить"
+                        connectionArea.on('click', '.a2s_delete-connection', function (){
+                            let confirmModal = new ConfirmModal({
+                                disable_overlay_click: false,
+                                accept_text: 'Да',
+                                decline_text: 'Отмена',
+                                text: 'Удаление выгрузки',
+                                message: [
+                                    {
+                                        text: 'Выгрузка будет удалена, продолжить?',
+                                    },
+                                ],
+                            });
+
+                            confirmModal.options.accept = function () {
+                                $.ajax({
+                                    url: endpointAPI+'connection',
+                                    method: 'DELETE',
+                                    data: {
+                                        domain: system.domain,
+                                        uuid: uuid
+                                    },
+                                    success: function () {
+                                        confirmModal.destroy();
+                                        $(document).trigger('a2s_render-settings');
+                                        APP.notifications.show_message({
+                                            header: self.i18n('advanced').title,
+                                            text: 'Выгрузка удалена',
+                                        });
+                                    }
+                                });
+                            }
+                        })
+
+                        // Нажал на "сохранить"
+                        connectionArea.on('submit', '#a2s_form-connection', function (e){
+                            e.preventDefault();
+
+                            connectionArea.find('button').addClass('button-input-disabled');
+                            let formData = arrToObj($(e.currentTarget).serializeArray(), 'name'),
+                                sheetUrl = formData.sheet_id.value,
+                                sheetFields = [],
+                                sheetID;
+
+                            $('.a2s_field-row').each(function (k,v){
+                                sheetFields.push({
+                                    name: $(v).find('[name="field-name"]').val(),
+                                    type: $(v).data('field_type'),
+                                    order: $(v).find('[name="field-order"]').val(),
+                                    custom: $(v).data('field_custom')*1,
+                                });
+                            });
+
+                            sheetFields.sort((a, b) => a.order - b.order);
+                            $.each(sheetFields, function (k,v){
+                                v.order = k+1;
+                            });
+
+                            if (sheetUrl.includes('/')){
+                                sheetID = new URL(sheetUrl).pathname.split('/')[3];
+                            } else {
+                                sheetID = sheetUrl;
+                            }
+
+
+                            $.ajax({
+                                url: endpointAPI+'connection',
+                                method: 'POST',
+                                data: {
+                                    uuid: uuid,
+                                    domain: system.domain,
+                                    filter_id: formData.filter_id.value,
+                                    amouser_id: system.amouser_id,
+                                    sheet_id: sheetID,
+                                    sheet_fields: sheetFields,
+                                    active: $('#a2s_active').is(':checked')*1
+                                },
+                                success: function () {
+                                    $(document).trigger('a2s_render-settings');
+                                    APP.notifications.show_message({
+                                        header: self.i18n('advanced').title,
+                                        text: 'Выгрузка сохранена',
+                                    });
+                                },
+                                error: function (response){
+                                    new Modal()._showError(response.responseJSON.message, false);
+                                    connectionArea.find('button').removeClass('button-input-disabled');
+                                }
+                            });
+                        });
+                    });
+                }
+
                 function renderSettings(){
                     let loader = new Modal();
 
@@ -427,13 +498,17 @@ define([
                                         }),
                                         filterData = $.map(filterList, function (v) {
                                             v.author_name = (allUsersKeys[v.author_id] || {}).name;
-                                            v.full_url = `https://${system.domain}/leads/pipeline/${v.pipeline_id}/${v.filter_url}`;
+                                            v.full_url = `https://${system.domain}/leads/list${v.filter_url}`;
                                             return v;
                                         });
+
+                                    connectionData.sort((a, b) => a.filter_name.localeCompare(b.filter_name));
+                                    filterData.sort((a, b) => a.name.localeCompare(b.name));
 
                                     A2S.filterKeys = arrToObj(filterList, 'uuid');
                                     A2S.connectionKeys = arrToObj(connectionData, 'uuid');
                                     A2S.userKeys = allUsersKeys;
+                                    A2S.connectionFields = beData.data.connection_fields;
 
                                     self.getTemplate('advanced_settings', {}, function (template) {
                                         let page = template.render({
@@ -456,11 +531,11 @@ define([
                                         storeFilter($(e.currentTarget).data('uuid'));
                                     });
 
-                                    workArea.on('click', '#a2s-add_connection', function () {
+                                    workArea.on('click', '#a2s_add-connection', function () {
                                         storeConnection();
                                     });
 
-                                    workArea.on('click', '.a2s-sync_connection', function (e) {
+                                    workArea.on('click', '.a2s_sync-connection', function (e) {
                                         let uuid = $(e.currentTarget).data('uuid'),
                                             confirmModal = new ConfirmModal({
                                                 disable_overlay_click: false,
@@ -469,7 +544,10 @@ define([
                                                 text: 'Синхронизация сделок',
                                                 message: [
                                                     {
-                                                        text: 'Все сделки будут удалены из выбранной Google Таблицы и выгружены заново, это может занять время.',
+                                                        text: 'Все сделки будут удалены из выбранной Google Таблицы и выгружены заново, это может занять время',
+                                                    },
+                                                    {
+                                                        text: 'Проверьте что выключили выгрузку перед синхронизацией',
                                                     },
                                                     {
                                                         text: 'Продолжить?',
@@ -478,6 +556,23 @@ define([
                                             });
 
                                         confirmModal.options.accept = function () {
+                                            let modalBody = confirmModal.modal.$modal.find('.modal-body__inner');
+                                            modalBody.find('.modal-body__paragraph-text, .modal-body__actions').remove();
+                                            modalBody.append(`<p class="modal-body__paragraph-text">Сделок выгружено: <span id="a2s_sync-connection-count">0</span></p>`);
+                                            modalBody.append(`<p class="modal-body__paragraph-text" id="a2s_sync-connection-loader">...</p>`);
+                                            let syncCount = $('#a2s_sync-connection-count'),
+                                                syncLoader = $('#a2s_sync-connection-loader'),
+
+                                                loaderInterval = setInterval(function (){
+                                                    let dotsCnt = syncLoader.html().length;
+                                                    if (dotsCnt === 5){
+                                                        syncLoader.html('.')
+                                                    }
+                                                    else {
+                                                        syncLoader.html(syncLoader.html()+'.');
+                                                    }
+                                                },750);
+
                                             async function syncByPage() {
                                                 for (let page = 1; ; page++) {
                                                     let syncResult = await $.ajax({
@@ -488,28 +583,23 @@ define([
                                                             uuid: uuid,
                                                             page: page
                                                         },
+                                                        success: function (response){
+                                                            syncCount.html(syncCount.html() * 1 + response.data.count_done * 1);
+                                                        },
+                                                        error: function (response){
+                                                            confirmModal.destroy();
+                                                            new Modal()._showError(response.responseJSON.message, false);
+                                                        }
                                                     });
-                                                    if (!syncResult.data.next_page) break;
+                                                    if (!syncResult.data.next_page){
+                                                        syncLoader.html('Выгрузка завершена<br><span class="a2s_text-warning">Не забудьте включить выгрузку!<span>');
+                                                        break;
+                                                    }
                                                 }
                                             }
-                                            syncByPage().then();
-
-
-                                            // $.ajax({
-                                            //     url: endpointAPI+'sync_connection',
-                                            //     method: 'POST',
-                                            //     data: {
-                                            //         domain: system.domain,
-                                            //         uuid: uuid
-                                            //     },
-                                            //     success: function () {
-                                            //         confirmModal.destroy();
-                                            //         APP.notifications.show_message({
-                                            //             header: self.i18n('advanced').title,
-                                            //             text: 'Синхронизация начата',
-                                            //         });
-                                            //     }
-                                            // });
+                                            syncByPage().finally(function () {
+                                                clearInterval(loaderInterval);
+                                            });
                                         }
                                     });
                                 }
@@ -518,7 +608,9 @@ define([
                     });
                 }
 
-                $(document).on('a2s-render_settings', renderSettings);
+                $(document).on('click', '.a2s_render-settings', renderSettings);
+
+                $(document).on('a2s_render-settings', renderSettings);
 
                 renderSettings();
             }, self),

@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('amo_connection', function (Blueprint $table) {
-            $table->jsonb('sheet_fields')->after('sheet_id')->nullable()->comment('Экспортируемые поля');
+            $table->boolean('active')->after('date_sync')->default(true)->comment('Активна ли выгрузка');
         });
     }
 
     public function down(): void
     {
         Schema::table('amo_connection', function (Blueprint $table) {
-            $table->dropColumn('sheet_fields');
+            $table->dropColumn('active');
         });
     }
 };

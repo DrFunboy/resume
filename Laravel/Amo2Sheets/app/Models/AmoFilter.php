@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string uuid
  * @property string name
  * @property int account_id
- * @property string pipeline_id
  * @property string filter_url
  * @property int amo_author
  * @property ?string comment
@@ -23,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  *
  * @property-read boolean used
  * @property-read AmoAccount account
+ * @property-read AmoConnection connections
+ * @property-read AmoFilterPipeline pipelines
  *
  * @method static Builder|AmoFilter query()
  */
@@ -39,6 +40,11 @@ class AmoFilter extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(AmoAccount::class);
+    }
+
+    public function pipelines(): HasMany
+    {
+        return $this->hasMany(AmoFilterPipeline::class, 'filter_id', 'id');
     }
 
     public function connections(): HasMany

@@ -1,0 +1,42 @@
+<div class="list-row a2s_field-row"
+     data-field_custom="{{ field.custom }}"
+     data-field_type="{{ field.type }}"
+>
+    <div class="list-row__cell">
+        <div class="content-table__item__inner">
+            {% if field.custom %}
+                <input value="{{ field.name }}" name="field-name" required>
+            {% else %}
+                <input value="{{ field.name }}" name="field-name" style="display: none">
+                <span>{{ field.label }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="list-row__cell">
+        <div class="content-table__item__inner">
+            <span>{{ field.type_name }}</span>
+        </div>
+    </div>
+    <div class="list-row__cell">
+        <div class="content-table__item__inner">
+            <input type="number" value="{{ field.order }}" name="field-order">
+        </div>
+    </div>
+    <div class="list-row__cell">
+        <div class="content-table__item__inner">
+            <span>{{ field.custom? 'Да':'Нет' }}</span>
+        </div>
+    </div>
+
+    <div class="js-list-row__cell list-row__cell list-row__cell-id">
+        <div class="content-table__item__inner" style="overflow:visible;">
+            <div class="list-row__cell-edit-buttons a2s_pointer a2s_delete-field">
+                <span class="button-input-inner__text">
+                    <svg class="svg-icon svg-common--trash-dims">
+                        <use xlink:href="#common--trash"></use>
+                    </svg>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

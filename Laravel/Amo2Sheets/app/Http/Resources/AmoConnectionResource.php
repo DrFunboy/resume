@@ -18,7 +18,9 @@ class AmoConnectionResource extends JsonResource
             'filter_id' => $this->filter_id,
             'filter_name' => $this->filter->name,
             'sheet_id' => $this->sheet_id,
-            'date_sync' => $this->date_sync ? date('Y-m-d H:i:s', strtotime($this->created_at)) : null,
+            'sheet_fields' => $this->sheet_fields,
+            'date_sync' => $this->date_sync ? date('Y-m-d H:i:s', strtotime($this->date_sync)) : null,
+            'active' => $this->active,
             'author_id' => $this->amo_author,
             'created_at' => date('Y-m-d H:i:s', strtotime($this->created_at))
         ];

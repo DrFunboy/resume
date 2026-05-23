@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int amo_author
  * @property string created_at
  * @property string updated_at
+ * @property boolean active
  *
  * @property-read AmoFilter filter
  *
@@ -28,6 +29,7 @@ class AmoConnection extends Model
     protected $table = 'amo_connection';
     protected $casts = [
         'sheet_fields' => 'array',
+        'active' => 'boolean'
     ];
 
     public function uniqueIds(): array
@@ -45,7 +47,7 @@ class AmoConnection extends Model
         return $this->belongsTo(AmoFilter::class);
     }
 
-    public function scopeFilter(Builder $query, array $filterData): Builder
+    public function scopeFilter(Builder $query, array $filterData = []): Builder
     {
         if (!empty($filterData['domain'])) {
             $query->whereHas('AmoAccount', function (Builder $q) use ($filterData) {

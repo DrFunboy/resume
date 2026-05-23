@@ -1,4 +1,4 @@
-<div id="amo2sheets_advanced">
+<div id="a2s_advanced">
     <div class="list__body-right__top">
         <div class="list__top__actions--com">
             <div class="content__top__preset">
@@ -6,7 +6,7 @@
             </div>
         </div>
         <div class="list__top__actions">
-            <button class="button-input button-input_add button-input_blue" id="a2s-add_connection">
+            <button class="button-input button-input_add button-input_blue" id="a2s_add-connection">
                 <span class="button-input-inner__text">
                     Создать выгрузку
                 </span>
@@ -14,14 +14,14 @@
         </div>
     </div>
 
-    <div class="a2s-tabs">
-        <ul class="a2s-tabs_nav a2s-full_width">
-            <li class="a2s-tabs_nav_item a2s-active" data-tab="a2s-connections">Выгрузки</li>
-            <li class="a2s-tabs_nav_item" data-tab="a2s-filters">Фильтры</li>
+    <div class="a2s_tabs">
+        <ul class="a2s_tabs-nav a2s_full-width">
+            <li class="a2s_tabs-nav-item a2s_active" data-tab="a2s_connections">Выгрузки</li>
+            <li class="a2s_tabs-nav-item" data-tab="a2s_filters">Фильтры</li>
         </ul>
 
-        <div class="a2s-tabs_content">
-            <div class="a2s-tabs_pane a2s-active" id="a2s-connections">
+        <div class="a2s_tabs-content">
+            <div class="a2s_tabs-pane a2s_active" id="a2s_connections">
                 <div class="list__table a2s_table">
                     <div class="list-row list-row-head">
                         <div class="list-row__cell cell-head">
@@ -37,6 +37,11 @@
                         <div class="list-row__cell cell-head">
                             <div class="cell-head__inner cell-head__inner-content">
                                 <span>Синхронизация</span>
+                            </div>
+                        </div>
+                        <div class="list-row__cell cell-head">
+                            <div class="cell-head__inner cell-head__inner-content">
+                                <span>Активна</span>
                             </div>
                         </div>
                         <div class="list-row__cell cell-head">
@@ -58,9 +63,7 @@
                             <div class="list-row__cell edit_connection" data-uuid="{{ connection.uuid }}">
                                 <div class="content-table__item__inner">
                                     <span>
-                                        <a href class="list-row__template-name__table-wrapper__name-link">
-                                            {{ connection.filter_name }}
-                                        </a>
+                                        <a href class="list-row__template-name__table-wrapper__name-link">{{ connection.filter_name }}</a>
                                     </span>
                                 </div>
                             </div>
@@ -76,6 +79,11 @@
                             </div>
                             <div class="list-row__cell">
                                 <div class="content-table__item__inner">
+                                    <span>{{ connection.active? 'Да' : 'Нет' }}</span>
+                                </div>
+                            </div>
+                            <div class="list-row__cell">
+                                <div class="content-table__item__inner">
                                     <span>{{ connection.author_name? connection.author_name : connection.author_id }}</span>
                                 </div>
                             </div>
@@ -87,7 +95,7 @@
 
                             <div class="js-list-row__cell list-row__cell list-row__cell-id">
                                 <div class="content-table__item__inner" style="overflow:visible;">
-                                    <div class="list-row__cell-edit-buttons a2s-pointer a2s-sync_connection" data-uuid="{{ connection.uuid }}">
+                                    <div class="list-row__cell-edit-buttons a2s_pointer a2s_sync-connection" data-uuid="{{ connection.uuid }}">
                                         <span class="button-input-inner__text">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 20v-5h-5M4 4v5h5m10.938 2A8.001 8.001 0 0 0 5.07 8m-1.008 5a8.001 8.001 0 0 0 14.868 3"></path>
@@ -102,7 +110,7 @@
 
             </div>
 
-            <div class="a2s-tabs_pane" id="a2s-filters">
+            <div class="a2s_tabs-pane" id="a2s_filters">
                 <div class="list__table a2s_table">
                     <div class="list-row list-row-head">
                         <div class="list-row__cell cell-head">
@@ -142,9 +150,7 @@
                             <div class="list-row__cell edit_filter" data-uuid="{{ filter.uuid }}">
                                 <div class="content-table__item__inner">
                                     <span>
-                                        <a href class="list-row__template-name__table-wrapper__name-link">
-                                            {{ filter.name }}
-                                        </a>
+                                        <a href class="list-row__template-name__table-wrapper__name-link">{{ filter.name }}</a>
                                     </span>
                                 </div>
                             </div>
@@ -152,9 +158,7 @@
                             <div class="list-row__cell">
                                 <div class="content-table__item__inner">
                                     <span>
-                                        <a href="{{ filter.full_url }}" target="_blank" class="list-row__template-name__table-wrapper__name-link">
-                                            {{ filter.pipeline_id }}
-                                        </a>
+                                        <a href="{{ filter.full_url }}" target="_blank" class="list-row__template-name__table-wrapper__name-link">{{ filter.filter_url }}</a>
                                     </span>
                                 </div>
                             </div>

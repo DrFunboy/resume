@@ -1,0 +1,110 @@
+<div id="a2s_connection-edit">
+    <div class="list__body-right__top">
+        <div class="list__top__actions--com">
+            <div class="content__top__preset">
+                <h2 class="content__top__preset__caption">
+                    <button type="button" class="button-input button-cancel a2s_render-settings" title="Назад">
+                        <svg class="svg-icon svg-common--arrow-left-dims"><use xlink:href="#common--arrow-left"></use></svg>
+                    </button>
+                    {% if uuid %}
+                    <span>Редактировать выгрузку</span>
+                    {% else %}
+                        <span>Создать выгрузку</span>
+                    {% endif %}
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <form id="a2s_form-connection" class="a2s_form">
+        <div class="a2s_form-row">
+            <label for="a2s_filter-id">Фильтр</label>
+            <select id="a2s_filter-id" name="filter_id" class="control--select--button a2s_select a2s_form-control" required>
+                <option value="">Не выбрано</option>
+                {% for filter in filterData %}
+                    <option value="{{ filter.id }}" {{ filter_id == filter.id? 'selected' : '' }}>
+                        {{ filter.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="a2s_form-row">
+            <label for="a2s_sheet-id">Google Таблица</label>
+            <textarea id="a2s_sheet-id" name="sheet_id" class="text-input a2s_form-control" required>{{ sheet_id }}</textarea>
+        </div>
+        <div class="a2s_form-row">
+            <label for="a2s_list-name">Название листа</label>
+            <input id="a2s_list-name" name="list_name" class="text-input a2s_form-control" value="Сделки" disabled>
+        </div>
+        <div class="a2s_form-row">
+            <label for="a2s_active">Активна</label>
+            <label class="control-checkbox" style="margin-left: 1rem">
+                <div class="control-checkbox__body">
+                    <input type="checkbox" id="a2s_active" {{ active? 'checked' : '' }}>
+                    <span class="control-checkbox__helper"></span>
+                </div>
+            </label>
+        </div>
+
+        <div class="a2s_form-row">
+            <div style="width: 100%; display: flex">
+                <span>Список полей</span>
+                <button type="button" class="button-input button-input_blue a2s_add-field" style="margin-left: auto">
+                    <svg class="svg-icon svg-controls--button-add-dims "><use xlink:href="#controls--button-add"></use></svg>
+                    <span>Добавить поле</span>
+                </button>
+            </div>
+
+            <div class="list__table a2s_table" id="a2s_fields-table">
+                <div class="list-row list-row-head">
+                    <div class="list-row__cell cell-head">
+                        <div class="cell-head__inner cell-head__inner-content">
+                            <span>Название</span>
+                        </div>
+                    </div>
+                    <div class="list-row__cell cell-head">
+                        <div class="cell-head__inner cell-head__inner-content">
+                            <span>Тип</span>
+                        </div>
+                    </div>
+                    <div class="list-row__cell cell-head">
+                        <div class="cell-head__inner cell-head__inner-content">
+                            <span>Порядок</span>
+                        </div>
+                    </div>
+                    <div class="list-row__cell cell-head">
+                        <div class="cell-head__inner cell-head__inner-content">
+                            <span>Кастомное</span>
+                        </div>
+                    </div>
+                    <div class="cell-head list-row__cell list-row__cell-head list-row__cell-template-id">
+                    </div>
+                </div>
+
+                {% for field in sheet_fields %}
+                    {% include '/templates/connection_field_row.twig' %}
+                {% endfor %}
+            </div>
+        </div>
+        <div class="a2s_form-row">
+            <button type="submit" class="button-input button-input_blue">Сохранить</button>
+            {% if uuid %}
+                <button type="button" class="button-input a2s_delete-connection" data-uuid="{{ uuid }}">
+                    <span class="button-input-inner">
+                        <svg class="svg-icon svg-common--trash-dims">
+                            <use xlink:href="#common--trash"></use>
+                        </svg>
+                        <span class="button-input-inner__text">Удалить</span>
+                    </span>
+                </button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<script>
+    $('#a2s_connection-edit').on('click', '.a2s_delete-field', function (event){
+        $(event.currentTarget).closest('.list-row').remove();
+    });
+</script>
+

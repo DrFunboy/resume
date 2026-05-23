@@ -7,11 +7,13 @@ use App\Http\Resources\AmoFilterResource;
 use App\Models\AmoAccount;
 use App\Models\AmoConnection;
 use App\Models\AmoFilter;
+use App\Services\Amo2SheetsFields;
 use App\Services\Amo2SheetsService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
 
@@ -100,7 +102,6 @@ class Amo2Sheets extends Controller
             'name' => ['required', 'string'],
             'comment' => ['nullable', 'string'],
             'amouser_id' => ['required', 'integer'],
-            'pipeline_id' => ['nullable', 'integer'],
             'filter_url' => ['required', 'string'],
         ]);
 
@@ -111,14 +112,30 @@ class Amo2Sheets extends Controller
         if (empty($model)){
             $model = new AmoFilter();
         }
+        $pipelineIDs = [];
+        $filterArr = [];
+        $filter = str_replace('?', '', $validated['filter_url']);
+        parse_str($filter, $filterArr);
+
+
+
+        if (!empty($filterArr['filter']['pipe'])) {
+            foreach ($filterArr['filter']['pipe'] as $pipelineID => $statuses){
+                $pipelineIDs[$pipelineID] = ['pipeline_id' => $pipelineID];
+            }
+        }
+        else {
+            return self::error('Empty pipelines');
+        }
 
         $model->account_id = $request->amoAccount->id;
         $model->name = $validated['name'];
         $model->comment = $validated['comment'] ?? null;
-        $model->pipeline_id = $validated['pipeline_id'];
         $model->filter_url = $validated['filter_url'];
         $model->amo_author = $validated['amouser_id'];
         $model->save();
+
+        $model->pipelines()->createMany($pipelineIDs);
 
         return self::success();
     }
@@ -155,7 +172,17 @@ class Amo2Sheets extends Controller
             'amouser_id' => ['required', 'integer'],
             'filter_id' => ['required', 'integer'],
             'sheet_fields' => ['required', 'array'],
+            'sheet_fields.*.name' => ['required', 'string'],
+            'sheet_fields.*.type' => ['required', 'string'],
+            'sheet_fields.*.order' => ['required', 'integer'],
+            'sheet_fields.*.custom' => ['required', 'integer'],
+            'active' => ['required', 'boolean'],
         ]);
+
+        foreach ($validated['sheet_fields'] as &$v){
+            $v['order'] = intval($v['order']);
+            $v['custom'] = intval($v['custom']);
+        }
 
         if (!empty($validated['uuid'])) {
             $model = AmoConnection::query()->where('uuid', $validated['uuid'])->first();
@@ -182,6 +209,7 @@ class Amo2Sheets extends Controller
         $model->sheet_id = $validated['sheet_id'];
         $model->sheet_fields = $validated['sheet_fields'];
         $model->amo_author = $validated['amouser_id'];
+        $model->active = $validated['active'];
         $model->save();
 
         return self::success();
@@ -231,6 +259,7 @@ class Amo2Sheets extends Controller
         return self::success([
             'filters' => $filters,
             'connections' => $connections,
+            'connection_fields' => Amo2SheetsFields::$fields
         ]);
     }
 
@@ -296,13 +325,16 @@ class Amo2Sheets extends Controller
 
     public function addEvent(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'account' => ['required', 'array'],
-            'leads' => ['nullable', 'array'],
-        ]);
-        $domain = $validated['account']['subdomain'].'.amocrm.ru';
+        $account = $request->account ?? [];
+        $leads = $request->leads ?? [];
+        if (empty($account) || empty($leads)) {
+            Log::channel('amo')->alert('Event ' . json_encode($_REQUEST));
+            return self::success();
+        }
+
+        $domain = $account['subdomain'].'.amocrm.ru';
         Amo2SheetsService::saveEvents($domain, [
-            'leads' => $validated['leads']
+            'leads' => $leads
         ]);
         return self::success();
     }

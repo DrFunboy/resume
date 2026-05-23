@@ -1,0 +1,101 @@
+<div id="a2s_modal">
+    <h2 class="ui-title ui-title--xl">Добавить поле</h2>
+
+    <form id="a2s_form-add-field" style="margin-top: 1rem">
+        <table class="a2s_table">
+            <tbody>
+                <tr>
+                    <td class="a2s_cell-title"><label for="a2s_field-custom">Кастомное поле</label></td>
+                    <td>
+                        <label class="control-checkbox">
+                            <div class="control-checkbox__body">
+                                <input type="checkbox" name="field-custom" id="a2s_field-custom">
+                                <span class="control-checkbox__helper"></span>
+                            </div>
+                        </label>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for="a2s_field-type">Тип</label>
+                    </td>
+                    <td>
+                        <select id="a2s_field-type" name="field-type" class="control--select--button a2s_select a2s_form-control" required>
+                            <option value="">Не выбрано</option>
+                            {% for groupName, fieldGroup in connectionFields %}
+                                <option value="{{ groupName }}">
+                                    {{ fieldTypeNames[groupName] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td>
+                        <label for="a2s_field-name-select">Название</label>
+                    </td>
+                    <td>
+                        <select id="a2s_field-name-select" name="field-name-select" class="control--select--button a2s_select a2s_form-control" required>
+                            <option value="">Не выбрано</option>
+                            {% for groupName, fieldGroup in connectionFields %}
+                                <optgroup label="{{ fieldTypeNames[groupName] }}" id="a2s_optgroup-{{ groupName }}">
+                                    {% for fieldName, field in fieldGroup %}
+                                        <option value="{{ fieldName }}">
+                                            {{ field.name }}
+                                        </option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+
+
+                <tr style="display: none">
+                    <td>
+                        <label for="a2s_field-name">Название</label>
+                    </td>
+                    <td>
+                        <input id="a2s_field-name" name="field-name" class="text-input">
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+
+        <div class="d-flex">
+            <button type="submit" class="button-input button-input_blue">Добавить</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    $('#a2s_field-type').on('change', function (event) {
+        let groupName = $(this).val();
+        $('#a2s_field-name-select').val('');
+        $('#a2s_field-name-select optgroup').each(function (k, v) {
+            if (v.id === 'a2s_optgroup-'+groupName) {
+                $(v).show();
+            }
+            else {
+                $(v).hide();
+            }
+        });
+    })
+
+
+    $('#a2s_field-custom').on('change', function () {
+        if ($(this).is(':checked')){
+            $('#a2s_field-name').prop('required', true).closest('tr').show();
+            $('#a2s_field-name-select').prop('required', false).closest('tr').hide();
+        }
+        else {
+            $('#a2s_field-name').prop('required', false).closest('tr').hide();
+            $('#a2s_field-name-select').prop('required', true).closest('tr').show();
+        }
+    });
+</script>
+

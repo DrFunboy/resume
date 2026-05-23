@@ -19,7 +19,6 @@ class AmoFilterResource extends JsonResource
             'used' => $this->used,
             'name' => $this->name,
             'comment' => $this->comment,
-            'pipeline_id' => $this->pipeline_id,
             'filter_url' => $this->filter_url,
             'author_id' => $this->amo_author,
             'created_at' => date('Y-m-d H:i:s', strtotime($this->created_at))

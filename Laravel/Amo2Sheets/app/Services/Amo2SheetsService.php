@@ -8,6 +8,7 @@ use App\Models\AmoAccount;
 use App\Models\AmoConnection;
 use App\Models\AmoEvent;
 use App\Models\AmoFilter;
+use App\Models\AmoFilterPipeline;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,15 @@ class Amo2SheetsService
     const int MAX_TRY_COUNT = 5;
 
 
-    static function easyCurl($endpoint, $token, $body, $method): bool|string
+    /**
+     * Упрощенный curl
+     * @param string $endpoint
+     * @param string $token
+     * @param array $body
+     * @param string $method
+     * @return bool|string
+     */
+    static function easyCurl(string $endpoint, string $token, array $body, string $method): bool|string
     {
         if (empty($body) && $method == 'POST'){
             $method = 'GET';
@@ -44,7 +53,15 @@ class Amo2SheetsService
         return $rawResponse;
     }
 
-    static function googleCurl($endpoint, $token, $body = [], $method = 'POST')
+    /**
+     * Упрощенный curl к ендпоинтам Google sheets
+     * @param string $endpoint
+     * @param string $token
+     * @param array $body
+     * @param string $method
+     * @return array
+     */
+    static function googleCurl(string $endpoint, string $token, array $body = [], string $method = 'POST'): mixed
     {
         $endpoint = self::SHEETS_ENDPOINT . $endpoint;
         $rawResponse = self::easyCurl($endpoint, $token, $body, $method);
@@ -63,30 +80,47 @@ class Amo2SheetsService
         return $response;
     }
 
-    static function amoCurl($endpoint, $token, $body = [], $method = 'POST')
+    /**
+     * Упрощенный curl к ендпоинтам AmoCRM
+     * @param string $endpoint
+     * @param string $token
+     * @param array $body
+     * @param string $method
+     * @return array
+     */
+    static function amoCurl(string $endpoint, string $token, array $body = [], string $method = 'POST'): array
     {
         $rawResponse = self::easyCurl($endpoint, $token, $body, $method);
         $response = json_decode($rawResponse, true);
 
         if (empty($response['_embedded'])){
-            $logBody = json_encode([
-                'endpoint' => $endpoint,
-                'token' => $token,
-                'rawResponse' => $rawResponse,
-                'body' => $body,
-            ]);
-            Log::channel('amo')->error('AmoAPI ' . $logBody);
+            if (!empty($rawResponse)) {
+                // Если не находит сделок, то endpoint ничего не возвращает, логировать это не нужно
+                $logBody = json_encode([
+                    'endpoint' => $endpoint,
+                    'token' => $token,
+                    'rawResponse' => $rawResponse,
+                    'body' => $body,
+                ]);
+                Log::channel('amo')->error('AmoAPI ' . $logBody);
+            }
+
             return ['error' => $rawResponse];
         }
         return $response;
     }
 
+    /**
+     * Преобразовывает строку с фильтрами со станицы воронки в массив фильтров для запроса к API
+     * @param string $filter
+     * @return array
+     */
     static function parseAmoFilter(string $filter): array
     {
         $parsedArr = [];
         $filterArr = [];
+        $filter = str_replace('?', '', $filter);
         parse_str($filter, $filterArr);
-
 
         if (!empty($filterArr['filter']['pipe'])) {
             foreach ($filterArr['filter']['pipe'] as $pipelineID => $statuses){
@@ -99,22 +133,68 @@ class Amo2SheetsService
             }
         }
 
-        // TODO брать AMO_CUSTOM_FILTERS из БД
-        if (!empty($filterArr['filter']['cf']) && env('AMO_CUSTOM_FILTERS', false)) {
+        // TODO брать настройку "оплачены ли фильтры" из БД
+        if (!empty($filterArr['filter']['cf'])) {
             foreach ($filterArr['filter']['cf'] as $fieldName => $fieldParams){
-                $parsedArr['filter']['custom_fields_values'][$fieldName] = $fieldParams;
+                if (gettype($fieldParams) == 'array' ){
+                    if (!empty($fieldParams['date_preset'])) {
+                        $from = 0;
+                        $to = time();
+                        # Есть еще пресесеты, но их не используют
+                        if (str_contains($fieldParams['date_preset'], 'previous_days_')){
+                            $days = explode('_', $fieldParams['date_preset'])[2] ?? 0;
+                            $from = strtotime("-{$days} days");
+                        }
+                        else {
+                            Log::channel('amo')->alert('Unknown filter '.json_encode([
+                                'name' => $fieldName,
+                                'filter' => $filter
+                            ]));
+                            continue;
+                        }
+                        $parsedArr['filter']['custom_fields_values'][$fieldName]['from'] = $from;
+                        $parsedArr['filter']['custom_fields_values'][$fieldName]['to'] = $to;
+
+                    }
+                    else if(!empty($fieldParams['from'])){
+                        $parsedArr['filter']['custom_fields_values'][$fieldName]['from'] = $fieldParams['from'];
+                    }
+                    else if(!empty($fieldParams['to'])){
+                        $parsedArr['filter']['custom_fields_values'][$fieldName]['to'] = $fieldParams['to'];
+                    }
+                    else if(!empty($fieldParams[0])){
+                        $parsedArr['filter']['custom_fields_values'][$fieldName] = $fieldParams;
+                    }
+                    else {
+                        Log::channel('amo')->alert('Unknown filter '.json_encode([
+                            'name' => $fieldName,
+                            'filter' => $filter
+                        ]));
+                        continue;
+                    }
+                }
+                else {
+                    $parsedArr['filter']['custom_fields_values'][$fieldName] = $fieldParams;
+                }
             }
         }
 
-
-        if (!empty($filterArr['filter_date_from']) && !empty($filterArr['filter_date_to'])) {
+        // TODO могут быть фильтры и по другим полям
+        if (!empty($filterArr['filter_date_from'])) {
             $parsedArr['filter']['created_at']['from'] = strtotime($filterArr['filter_date_from']);
-            $parsedArr['filter']['created_at']['to'] = strtotime($filterArr['filter_date_to']);
+            $parsedArr['filter']['created_at']['to'] = strtotime($filterArr['filter_date_to'] ?? date('c'));
         }
 
         return $parsedArr;
     }
 
+    /**
+     * Получает и при необходимости обновляет токен для API Google
+     * @param $domain
+     * @param $code
+     * @param $redirectUrl
+     * @return bool|string
+     */
     public static function getGoogleToken($domain, $code = null, $redirectUrl = null): bool|string
     {
         $token = Cache::get('google_access_' . $domain);
@@ -138,6 +218,7 @@ class Amo2SheetsService
             $params['refresh_token'] = $account->google_refresh;
         }
         else {
+            // Если у пользователя нет refresh токена, то генерирует ссылку на авторизацию
             if (empty($code) || empty($redirectUrl)) {
                 return false;
             }
@@ -178,6 +259,11 @@ class Amo2SheetsService
         return $response['access_token'];
     }
 
+    /**
+     * Удаляет токен для API Google
+     * @param $domain
+     * @return bool
+     */
     public static function revokeGoogleToken($domain): bool
     {
         /** @var AmoAccount $account */
@@ -212,6 +298,12 @@ class Amo2SheetsService
         return true;
     }
 
+    /**
+     * Получает и при необходимости обновляет токен для API AmoCRM
+     * @param $domain
+     * @param $code
+     * @return bool|string
+     */
     public static function getAmoToken($domain, $code = null): bool|string
     {
         $redirectUrl = route('amoInstall');
@@ -277,9 +369,11 @@ class Amo2SheetsService
     }
 
     /**
+     * Сохраняет $deals в Google таблицу
      * @param string $domain
      * @param string $spreadsheetId
-     * @param string $pipelineID
+     * @param array $sheetFields
+     * @param array $pipelineIDs
      * @param array $deals
      * @param bool $force Не искать совпадения
      * @return array
@@ -288,7 +382,7 @@ class Amo2SheetsService
         string $domain,
         string $spreadsheetId,
         array $sheetFields,
-        string $pipelineID,
+        array $pipelineIDs,
         array $deals,
         bool $force = false
     ): array
@@ -296,22 +390,34 @@ class Amo2SheetsService
         $amoToken = self::getAmoToken($domain);
         $googleToken = self::getGoogleToken($domain);
         $sheetName = self::SHEET_NAME;
-
         usort($sheetFields, function($a, $b) {
             return $a['order'] <=> $b['order'];
         });
 
         # Получение статусов воронки
+        static $oldPipelineIDs = $pipelineIDs;
         static $amoStatuses = [];
+        static $amoPipeline = [];
+
+        # Что бы не вызывать одни и те же запросы на больших выгрузках
+        if ($oldPipelineIDs !== $pipelineIDs){
+            unset($oldPipelineIDs, $amoStatuses, $amoPipeline);
+            $oldPipelineIDs = $pipelineIDs;
+            $amoStatuses = [];
+            $amoPipelines = [];
+        }
+
         if (empty($amoStatuses)) {
-            $rawStatuses = self::amoCurl(
-                endpoint: "https://{$domain}/api/v4/leads/pipelines/{$pipelineID}/statuses",
-                token: $amoToken
-            );
-            foreach ($rawStatuses['_embedded']['statuses'] as $amoStatus) {
-                $amoStatuses[$amoStatus['id']] = $amoStatus['name'];
+            foreach ($pipelineIDs as $pipelineID ){
+                $amoPipeline = self::amoCurl(
+                    endpoint: "https://{$domain}/api/v4/leads/pipelines/{$pipelineID}",
+                    token: $amoToken
+                );
+                $amoPipelines[$amoPipeline['id']] = $amoPipeline['name'];
+                foreach ($amoPipeline['_embedded']['statuses'] as $amoStatus) {
+                    $amoStatuses[$amoStatus['id']] = $amoStatus['name'];
+                }
             }
-            unset($rawStatuses);
         }
 
         # Получение пользователей в amo
@@ -326,13 +432,12 @@ class Amo2SheetsService
                 foreach ($rawUsers['_embedded']['users'] as $amoUser) {
                     $amoUsers[$amoUser['id']] = $amoUser['name'];
                 }
-                unset($rawUsers);
-
-                if (empty($deals['_links']['next'])){
+                if (empty($rawUsers['_links']['next'])){
                     break;
                 }
                 $nextPage++;
             }
+            unset($rawUsers);
         }
 
         if (!$force){
@@ -343,9 +448,27 @@ class Amo2SheetsService
             ]);
 
             if (!empty($newSheet['error'])) {
-                return $newSheet;
+                # Получение id листа если он существует
+                $sheetData = self::googleCurl(
+                    endpoint: $spreadsheetId,
+                    token: $googleToken,
+                    method: 'GET'
+                );
+
+                $newSheetID = null;
+                foreach ($sheetData['sheets'] as $sheet){
+                    if ($sheet['properties']['title'] === $newSheetName){
+                        $newSheetID = $sheet['properties']['sheetId'];
+                        break;
+                    }
+                }
+                if (is_null($newSheetID)){
+                    return $newSheet;
+                }
             }
-            $newSheetID = $newSheet['replies'][0]['addSheet']['properties']['sheetId'];
+            else{
+                $newSheetID = $newSheet['replies'][0]['addSheet']['properties']['sheetId'];
+            }
         }
 
         # Поиск строк которые можно обновить и генерация фильтра для запроса контактов
@@ -425,6 +548,9 @@ class Amo2SheetsService
                     case 'status_name':
                         $dealFields[] = $amoStatuses[$deal['status_id']];
                         break;
+                    case 'pipeline_name':
+                        $dealFields[] = $amoPipelines[$deal['pipeline_id']] ?? '';
+                        break;
                     case 'responsible_user_name':
                         if ($sheetField['type'] == 'deal' && !empty($deal['responsible_user_id'])) {
                             $dealFields[] = $amoUsers[$deal['responsible_user_id']];
@@ -472,6 +598,10 @@ class Amo2SheetsService
                                     ) {
                                         $customFieldValue = date('d.m.Y', $customFieldValue);
                                     }
+                                    if ($customField['field_type'] == 'numeric'){
+                                        $customFieldValue = floatval($customFieldValue);
+                                    }
+
                                     break;
                                 }
                             }
@@ -526,9 +656,9 @@ class Amo2SheetsService
             );
         }
 
-        # Добавление новых
+        # Добавление новых в начало
         self::googleCurl(
-            endpoint: "{$spreadsheetId}/values/{$sheetName}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE",
+            endpoint: "{$spreadsheetId}/values/{$sheetName}!A3:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
             token: $googleToken,
             body: ['values' => $appendDeals]
         );
@@ -536,7 +666,14 @@ class Amo2SheetsService
         return ['success' => true];
     }
 
-    static function removeDataFromSheet($domain, $spreadsheetId, $ids): array
+    /**
+     * Ищет данные по идентификаторам и удаляет их из Google таблицы
+     * @param string $domain
+     * @param string $spreadsheetId
+     * @param array $ids
+     * @return array
+     */
+    static function removeDataFromSheet(string $domain, string $spreadsheetId, array $ids): array
     {
         # Создание листа для поиска по id
         $googleToken = self::getGoogleToken($domain);
@@ -623,16 +760,23 @@ class Amo2SheetsService
         return ['success' => true];
     }
 
-    public static function syncConnection($domain, $connectionUUID, $page = 1): array
+    /**
+     * Постранично выгружает данные из воронки в Google таблицу
+     * @param string $domain
+     * @param string $connectionUUID
+     * @param int $page
+     * @return array
+     */
+    public static function syncConnection(string $domain, string $connectionUUID, int $page = 1): array
     {
         /** @var AmoConnection $connection */
         $connection = AmoConnection::query()->where('uuid', $connectionUUID)->first();
         if (empty($connection)) {
             return ['error' => 'Выгрузка не найдена'];
         }
-        $pipelineID = $connection->filter->pipeline_id;
 
-        if (empty($pipelineID)){
+        $pipelineIDs = $connection->filter->pipelines()->pluck('pipeline_id')->all();
+        if (empty($pipelineIDs)){
             return ['error' => 'Фильтр настроен неправильно'];
         }
 
@@ -642,7 +786,6 @@ class Amo2SheetsService
         }
 
         $sheetExist = self::googleCurl($connection->sheet_id, $googleToken);
-
         if (!empty($sheetExist['error'])) {
             return ['error' => 'Таблица ' . $connection->sheet_id . ' не существует или к ней нет доступа'];
         }
@@ -653,17 +796,17 @@ class Amo2SheetsService
         }
 
         $filter = self::parseAmoFilter($connection->filter->filter_url);
-        $filter['filter']['pipeline_id'] = $pipelineID;
         $filterStr = http_build_query($filter);
 
-        $pipelineExist = self::amoCurl(
+        $dealsExist = self::amoCurl(
             endpoint: "https://{$domain}/api/v4/leads?{$filterStr}&order[created_at]=desc&limit=1",
             token: $amoToken
         );
-        if (!empty($pipelineExist['error'])) {
-            return ['error' => 'Воронка ' . $pipelineID . ' не существует или к ней нет доступа'];
+        if (!empty($dealsExist['error'])) {
+            return ['error' => 'Сделок для экспорта не найдено'];
         }
 
+        # Если первая страница, то очищаем все строки, кроме заголовка
         if ($page === 1){
             $clearSheet = self::googleCurl(
                 endpoint: $connection->sheet_id . '/values:batchClear',
@@ -672,12 +815,12 @@ class Amo2SheetsService
             );
 
             if (!empty($clearSheet['error'])) {
-                return ['error' => 'Таблицу ' . self::SHEET_NAME . ' не удалось очистить'];
+                return ['error' => 'Лист ' . self::SHEET_NAME . ' не удалось очистить'];
             }
         }
 
         $deals = self::amoCurl(
-            endpoint: "https://{$domain}/api/v4/leads?{$filterStr}&with=contacts&order[created_at]=desc&page={$page}",
+            endpoint: "https://{$domain}/api/v4/leads?{$filterStr}&with=contacts&order[created_at]=asc&page={$page}",
             token: $amoToken
         );
 
@@ -685,7 +828,7 @@ class Amo2SheetsService
             domain: $domain,
             spreadsheetId: $connection->sheet_id,
             sheetFields: $connection->sheet_fields,
-            pipelineID: $pipelineID,
+            pipelineIDs: $pipelineIDs,
             deals: $deals['_embedded']['leads'],
             force: true
         );
@@ -697,13 +840,22 @@ class Amo2SheetsService
             ];
         }
 
+        $connection->date_sync = date('Y-m-d H:i:s');
+        $connection->save();
+
         return [
             'next_page' => !(empty($deals['_links']['next'])),
             'count_done' => count($deals['_embedded']['leads'])
         ];
     }
 
-    public static function saveEvents($domain, $events): array
+    /**
+     * Ищет выгрузки к которым относится вебхук и сохраняет его
+     * @param string $domain
+     * @param array $events
+     * @return array
+     */
+    public static function saveEvents(string $domain, array $events): array
     {
         /** @var AmoAccount $account */
         $account = AmoAccount::query()->where(['domain' => $domain])->first();
@@ -737,16 +889,18 @@ class Amo2SheetsService
                         continue;
                     }
 
-                    $connection = $account->connections()->whereHas('filter', function ($query) use($lead) {
-                        $query->where('pipeline_id', $lead['pipeline_id']);
-                    })->first();
-                    if (empty($connection)) {
+                    $connections = $account->connections()->whereHas('filter', function ($filter) use ($lead) {
+                        $filter->whereHas('pipelines', function ($filterPipeline) use ($lead) {
+                            $filterPipeline->where('pipeline_id', $lead['pipeline_id']);
+                        });
+                    })->count();
+                    if ($connections == 0) {
                         continue;
                     }
 
                     $newEvent = new AmoEvent();
                     $newEvent->external_id = $lead['id'];
-                    $newEvent->connection_id = $connection->id;
+                    $newEvent->pipeline_id = $lead['pipeline_id'];
                     $newEvent->type = AmoEventType::LEAD->value();
                     $newEvent->status = AmoEventStatus::WAITING->value();
                     $newEvent->event_body = $lead;
@@ -758,9 +912,17 @@ class Amo2SheetsService
         return [];
     }
 
+    /**
+     * Обрабатывает вебхуки и сохраняет данные в Google таблицы
+     * @return void
+     */
     public static function processEvents(): void
     {
-        // TODO: Не выполнять если идёт полная синхронизация
+        # TODO: Не выполнять если идёт полная синхронизация
+        # TODO: Добавить лимит кол-ва выбираемых строк за запуск, 5к-15к мб
+        # TODO: Подумать, что делать если лимит у Amo изменится
+
+        # Выбирает вебхуки постранично, т.к. у Amo есть лимит в 250 записей за запрос
         $limit = 250;
         $offset = 0;
         while (true){
@@ -775,7 +937,7 @@ class Amo2SheetsService
                             $query->where([
                                 ['status', AmoEventStatus::PROCESSING->value()],
                                 ['try_count', '<', self::MAX_TRY_COUNT],
-                                ['date_start', '<=', strtotime('-30 min')]
+                                ['date_start', '<=', date('Y-m-d H:i:s', strtotime('-15 min'))]
                             ]);
                         });
                 })
@@ -788,24 +950,38 @@ class Amo2SheetsService
                 break;
             }
 
-            $byPipeline = [];
+            # Выбирает все выгрузки к которым относится вебхук
+            $byFilter = [];
             /** @var AmoEvent $event */
             foreach ($events as $event){
-                $byPipeline[$event->connection->filter->pipeline_id]['connection'] = $event->connection;
-                $byPipeline[$event->connection->filter->pipeline_id]['filter'] = $event->connection->filter;
-                $byPipeline[$event->connection->filter->pipeline_id]['events'][] = $event;
+                $hasConnection = false;
+                /** @var AmoFilter $filter */
+                foreach ($event->filters as $filter) {
+                    /** @var AmoConnection $connection */
+                    foreach ($filter->connections as $connection){
+                        if ($connection->active) {
+                            $hasConnection = true;
+                            $byFilter[$filter->id]['filter'] = $filter;
+                            $byFilter[$filter->id]['events'][$event->id] = $event;
+                            $byFilter[$filter->id]['connections'][$connection->id] = $connection;
+                            $event->status = AmoEventStatus::PROCESSING->value();
+                        }
+                    }
+                }
 
-                $event->status = AmoEventStatus::PROCESSING->value();
+                if (!$hasConnection) {
+                    $event->status = AmoEventStatus::REJECTED->value();
+                }
+
                 $event->date_start = date('Y-m-d H:i:s');
                 $event->try_count = $event->try_count + 1;
                 $event->save();
             }
 
-            foreach ($byPipeline as $eventData){
+            # Ищет сделки в Amo, обновляет, добавляет или удаляет их в Google Таблице
+            foreach ($byFilter as $eventData){
                 /** @var AmoFilter $filter */
                 $filter = $eventData['filter'];
-                /** @var AmoConnection $connection */
-                $connection = $eventData['connection'];
                 $filterArr = self::parseAmoFilter($filter->filter_url);
 
                 foreach ($eventData['events'] as $event){
@@ -817,23 +993,23 @@ class Amo2SheetsService
                 $amoToken = self::getAmoToken($domain);
 
                 $deals = self::amoCurl(
-                    endpoint: "https://{$domain}/api/v4/leads?{$filterStr}&with=contacts&order[created_at]=desc",
+                    endpoint: "https://{$domain}/api/v4/leads?{$filterStr}&with=contacts&order[created_at]=asc",
                     token: $amoToken
                 );
 
-
-                if (empty($deals)){
+                if (!empty($deals['error'])){
                     foreach ($eventData['events'] as $event){
                         $event->status = AmoEventStatus::REJECTED->value();
                         $event->date_end = date('Y-m-d H:i:s');
                         $event->save();
                     }
-                    return;
+                    continue;
                 }
                 $deletedLeads = [];
                 $existLeads = [];
+                $leads = $deals['_embedded']['leads'] ?? [];
 
-                foreach ($deals['_embedded']['leads'] as $lead){
+                foreach ($leads as $lead){
                     $existLeads[$lead['id']] = true;
                 }
 
@@ -843,23 +1019,36 @@ class Amo2SheetsService
                     }
                 }
 
-                if (!empty($deletedLeads)){
-                    self::removeDataFromSheet($domain, $connection->sheet_id, $deletedLeads);
-                }
 
-                $result = self::saveDataToSheet(
-                    domain: $domain,
-                    spreadsheetId: $connection->sheet_id,
-                    sheetFields: $connection->sheet_fields,
-                    pipelineID: $filter->pipeline_id,
-                    deals: $deals['_embedded']['leads']
-                );
+                foreach ($eventData['connections'] as $connection){
+                    if (!empty($deletedLeads)){
+                        self::removeDataFromSheet($domain, $connection->sheet_id, $deletedLeads);
+                        AmoEvent::query()->whereIn('external_id', $deletedLeads)
+                            ->update([
+                                'status' => AmoEventStatus::COMPLETED->value(),
+                                'date_end' => date('Y-m-d H:i:s')
+                            ]);
+                    }
 
-                if (empty($result['error'])){
-                    foreach ($eventData['events'] as $event){
-                        $event->status = AmoEventStatus::COMPLETED->value();
-                        $event->date_end = date('Y-m-d H:i:s');
-                        $event->save();
+                    if (!empty($leads)) {
+                        $hasError = false;
+                        $result = self::saveDataToSheet(
+                            domain: $domain,
+                            spreadsheetId: $connection->sheet_id,
+                            sheetFields: $connection->sheet_fields,
+                            pipelineIDs: $filter->pipelines()->pluck('pipeline_id')->all(),
+                            deals: $leads
+                        );
+                        if (!empty($result['error'])) {
+                            $hasError = true;
+                        }
+                        if (!$hasError){
+                            foreach ($eventData['events'] as $event){
+                                $event->status = AmoEventStatus::COMPLETED->value();
+                                $event->date_end = date('Y-m-d H:i:s');
+                                $event->save();
+                            }
+                        }
                     }
 
                     $connection->date_sync = date('Y-m-d H:i:s');

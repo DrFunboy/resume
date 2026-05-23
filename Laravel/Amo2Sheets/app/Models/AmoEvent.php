@@ -6,14 +6,14 @@ use App\Enums\AmoEventStatus;
 use App\Enums\AmoEventType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property int id
  * @property string external_id
  * @property AmoEventType type
  * @property AmoEventStatus status
- * @property int connection_id
+ * @property int pipeline_id
  * @property int try_count
  * @property array event_body
  * @property string date_start
@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string created_at
  * @property string updated_at
  *
- * @property-read AmoConnection connection
+ * @property-read AmoFilter filters
  *
  * @method static Builder|AmoEvent query()
  */
@@ -33,9 +33,15 @@ class AmoEvent extends Model
         'event_body' => 'array',
     ];
 
-    public function connection(): HasOne
+    public function filters(): hasManyThrough
     {
-        return $this->hasOne(AmoConnection::class, 'id', 'connection_id');
+        return $this->hasManyThrough(
+            AmoFilter::class,
+            AmoFilterPipeline::class,
+            'pipeline_id',
+            'id',
+            'pipeline_id',
+            'filter_id'
+        );
     }
-
 }

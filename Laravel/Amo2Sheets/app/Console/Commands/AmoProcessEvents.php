@@ -9,7 +9,7 @@ class AmoProcessEvents extends Command
 {
     protected $signature = 'amo:process-events';
     protected $description = 'Processes events from AmoCRM';
-    public function handle()
+    public function handle(): void
     {
         Amo2SheetsService::processEvents();
     }

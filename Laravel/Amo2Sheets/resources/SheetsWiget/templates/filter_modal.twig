@@ -1,4 +1,4 @@
-<div id="amo2sheets_modal">
+<div id="a2s_modal">
     {% if uuid %}
         <h2 class="ui-title ui-title--xl">Редактировать фильтр</h2>
     {% else %}
@@ -6,24 +6,22 @@
     {% endif %}
 
 
-    <form id="a2s-form_filter" style="margin-top: 1rem">
-        <table class="a2s-table">
+    <form id="a2s_form-filter" style="margin-top: 1rem">
+        <table class="a2s_table">
             <tbody>
             <tr>
-                <td class="a2s-cell_title"><label for="a2s-filter_name">Название</label></td>
+                <td class="a2s_cell-title"><label for="a2s_filter-name">Название</label></td>
                 <td>
-                    <input id="a2s-filter_name" name="filter_name" class="text-input" value="{{ name }}" required>
+                    <input id="a2s_filter-name" name="filter_name" class="text-input" value="{{ name }}" required>
                 </td>
             </tr>
 
             <tr>
                 <td>
-                    <label for="a2s-filter_comment">Комментарий</label>
+                    <label for="a2s_filter-comment">Комментарий</label>
                 </td>
                 <td>
-                    <textarea id="a2s-filter_comment" name="filter_comment" class="text-input">
-                        {{ comment }}
-                    </textarea>
+                    <textarea id="a2s_filter-comment" name="filter_comment" class="text-input">{{ comment }}</textarea>
                 </td>
             </tr>
             </tbody>
