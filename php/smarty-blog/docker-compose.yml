@@ -1,0 +1,44 @@
+services:
+  app:
+    container_name: ${COMPOSE_PROJECT_NAME}_php
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_PORT: ${DB_PORT_EXTERNAL}
+      DB_NAME: ${DB_DATABASE}
+      DB_USER: ${DB_USERNAME}
+      DB_PASS: ${DB_PASSWORD}
+    depends_on:
+      - db
+    networks:
+      - blog_net
+
+  db:
+    container_name: ${COMPOSE_PROJECT_NAME}_mysql
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    ports:
+      - ${DB_PORT_EXTERNAL}:3306
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - blog_net
+
+networks:
+  blog_net:
+    driver: bridge
+
+volumes:
+  db_data:

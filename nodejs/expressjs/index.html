@@ -1,10 +1,399 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Title</title>
+    <meta charset="UTF-8">
+    <title>Список элементов</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
-    123
+
+<div>
+    <div style="display:flex;gap:20px;">
+        <div style="flex:1;border:1px solid #ccc;padding:10px;min-height:400px;">
+            <div>
+                <h3>Все элементы</h3>
+                <span>Всего: <span id="leftTotal">0</span></span>
+            </div>
+            <div>
+                <input type="text" id="leftSearch" placeholder="Поиск по ID"/>
+            </div>
+            <div id="leftList" style="height:400px;overflow-y:auto;border:1px solid #eee;padding:5px;"></div>
+            <div>
+                <input type="number" id="newId" placeholder="Новый ID"/>
+                <button id="addBtn">Добавить</button>
+                <span id="addError" style="color:red;"></span>
+            </div>
+        </div>
+
+        <div style="flex:1;border:1px solid #ccc;padding:10px;min-height:400px;">
+            <div>
+                <h3>Выбранные</h3>
+                <span>Всего: <span id="rightTotal">0</span></span>
+            </div>
+            <div>
+                <input type="text" id="rightSearch" placeholder="Поиск по ID"/>
+            </div>
+            <div id="rightList" style="height:400px;overflow-y:auto;border:1px solid #eee;padding:5px;"></div>
+            <div style="font-size:12px;color:#666;padding:5px;">Перетаскивайте для сортировки</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        let state = {
+            left: {page: 0, search: '', items: [], total: 0, hasMore: true, loading: false},
+            right: {page: 0, search: '', items: [], total: 0, hasMore: true, loading: false},
+            dragging: null
+        };
+
+        const apiURL = "https://resume-w72j.onrender.com";
+
+        function apiGetItems(page, search, windowType) {
+            return $.ajax({
+                url: apiURL + '/api/items',
+                method: 'GET',
+                data: {page: page, search: search, window: windowType},
+                dataType: 'json'
+            });
+        }
+
+        function apiSelect(id) {
+            return $.ajax({
+                url: apiURL + '/api/select',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({id: id})
+            });
+        }
+
+        function apiDeselect(id) {
+            return $.ajax({
+                url: apiURL + '/api/deselect',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({id: id})
+            });
+        }
+
+        function apiReorder(ids) {
+            return $.ajax({
+                url: apiURL + '/api/reorder',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ids: ids})
+            });
+        }
+
+        function apiAddItem(id) {
+            return $.ajax({
+                url: apiURL + '/api/add-item',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({id: id})
+            });
+        }
+
+        function loadItems(windowType, reset) {
+            let win = state[windowType];
+            if (win.loading) return;
+
+            let page = reset ? 0 : win.page,
+                search = win.search;
+
+            win.loading = true;
+
+            apiGetItems(page, search, windowType).done(function (data) {
+                if (reset) {
+                    win.items = data.items;
+                    win.page = 0;
+                } else {
+                    // Удаляет дубликаты, которые могли появиться после moveItem
+                    let existingIds = new Set(win.items),
+                        newItems = data.items.filter(function (id) {
+                            return !existingIds.has(id);
+                        });
+                    win.items = win.items.concat(newItems);
+                }
+
+                win.total = data.total;
+                win.hasMore = data.hasMore;
+
+                win.loading = false;
+                renderItems(windowType);
+            }).fail(function () {
+                win.loading = false;
+            });
+        }
+
+        /**
+         * Заполняет таблицу
+         * @param windowType
+         */
+        function renderItems(windowType) {
+            let win = state[windowType],
+                container = windowType === 'left' ? '#leftList' : '#rightList',
+                totalSpan = windowType === 'left' ? '#leftTotal' : '#rightTotal',
+                isLeft = windowType === 'left';
+
+            $(totalSpan).text(win.total);
+
+            if (win.items.length === 0 && !win.loading) {
+                $(container).html('<div>Нет элементов</div>');
+                return;
+            }
+
+            let html = '';
+            win.items.forEach(function (id) {
+                html += '<div data-id="' + id + '" draggable="' + !isLeft + '" style="padding:5px;margin:2px 0;border:1px solid #eee;display:flex;justify-content:space-between;">';
+                html += '<span>ID: ' + id + '</span>';
+                html += '<div>';
+
+                if (!isLeft) {
+                    html += '<span style="cursor:grab;">⠿</span>';
+                }
+
+                if (isLeft) {
+                    html += '<button data-id="' + id + '" class="select-btn">></button>';
+                } else {
+                    html += '<button data-id="' + id + '" class="deselect-btn">x</button>';
+                }
+
+                html += '</div>';
+                html += '</div>';
+            });
+
+            if (win.loading) {
+                html += '<div class="is-loading">Загрузка...</div>';
+            }
+
+            $(container).html(html);
+
+            $(container).find('.select-btn').click(function () {
+                const id = parseInt($(this).data('id'));
+                handleSelect(id);
+            });
+
+            $(container).find('.deselect-btn').click(function () {
+                const id = parseInt($(this).data('id'));
+                handleDeselect(id);
+            });
+
+            if (!isLeft) {
+                $(container).find('[draggable="true"]').on('dragstart', function (e) {
+                    let id = parseInt($(this).data('id'));
+                    state.dragging = id;
+                    e.originalEvent.dataTransfer.setData('text/plain', id);
+                });
+
+                $(container).find('[draggable="true"]').on('dragend', function () {
+                    state.dragging = null;
+                });
+
+                $(container).find('[draggable="true"]').on('dragover', function (e) {
+                    e.preventDefault();
+                });
+
+                $(container).find('[draggable="true"]').on('drop', function (e) {
+                    e.preventDefault();
+                    let targetId = parseInt($(this).data('id')),
+                        draggedId = state.dragging;
+
+                    if (draggedId && draggedId !== targetId) {
+                        handleDrop(draggedId, targetId);
+                    }
+                });
+            }
+        }
+
+        /**
+         * Перенос элемента из левой таблицы в правую (-->)
+         */
+        function handleSelect(id) {
+            moveItem(id, 'left');
+
+            apiSelect(id).fail(function () {
+                moveItem(id, 'right');
+                alert('Ошибка при выборе элемента');
+            });
+        }
+
+
+        /**
+         * Перенос элемента из правой таблицы в левую (<--)
+         */
+        function handleDeselect(id) {
+            moveItem(id, 'right');
+
+            apiDeselect(id).fail(function () {
+                moveItem(id, 'left');
+                alert('Ошибка при снятии выбора');
+            });
+        }
+
+        /**
+         * Перетаскивание элемента в правой таблице
+         */
+        function handleDrop(draggedId, targetId) {
+            let currentItems = state.right.items,
+                draggedIndex = currentItems.indexOf(draggedId),
+                targetIndex = currentItems.indexOf(targetId);
+
+            if (draggedIndex === -1 || targetIndex === -1) return;
+
+            // Что бы не ждать бэк
+            let newItems = currentItems.slice();
+            newItems.splice(draggedIndex, 1);
+            newItems.splice(targetIndex, 0, draggedId);
+            state.right.items = newItems;
+            renderItems('right');
+
+            apiReorder(newItems).fail(function () {
+                state.right.items = currentItems;
+                renderItems('right');
+                alert('Ошибка при сортировке');
+            });
+        }
+
+        /**
+         * Добавление элемента
+         */
+        function addNewItem() {
+            let $newID = $('#newId'),
+                $addError = $('#addError'),
+                id = parseInt($newID.val());
+
+            if (isNaN(id) || id < 1) {
+                $addError.text('ID должен быть положительным числом');
+                return;
+            }
+
+            // Проверяем, не существует ли уже такой ID
+            if (state.left.items.indexOf(id) !== -1) {
+                $addError.text('ID уже существует');
+                return;
+            }
+
+            $addError.text('');
+            $newID.val('');
+
+            // Что бы не ждать бэк
+            state.left.items.unshift(id);
+            state.left.total++;
+            renderItems('left');
+
+            apiAddItem(id).fail(function () {
+                let index = state.left.items.indexOf(id);
+                if (index !== -1) {
+                    state.left.items.splice(index, 1);
+                    state.left.total--;
+                    renderItems('left');
+                    alert('Ошибка при добавлении элемента');
+                }
+            });
+        }
+
+        /**
+         * Перенос элемента в другую таблицу, что бы не ждать бэк
+         * @param id
+         * @param from
+         */
+        function moveItem(id, from) {
+            let side, altSide;
+            if (from === 'left') {
+                side = state.left
+                altSide = state.right
+            } else {
+                side = state.right
+                altSide = state.left
+            }
+            $.each(side.items, function (key, item) {
+                if (item === id) {
+                    side.items.splice(key, 1);
+                    altSide.items.splice(item - 1, 0, item);
+                    if (from === 'right') {
+                        altSide.items.sort((a, b) => a - b);
+                    }
+                    side.total--;
+                    altSide.total++;
+                    return false;
+                }
+            });
+
+            // Тут дедупликация
+            // if (side.items.length < 20 && side.total > 20){
+            //     loadItems(from, false);
+            // }
+            renderItems('left');
+            renderItems('right');
+        }
+
+        function refreshLeft() {
+            state.left.page = 0;
+            state.left.items = [];
+            loadItems('left', true);
+        }
+
+        function refreshRight() {
+            state.right.page = 0;
+            state.right.items = [];
+            loadItems('right', true);
+        }
+
+        /**
+         * Отслеживает скролл
+         * @param windowType
+         */
+        function handleScroll(windowType) {
+            let container = windowType === 'left' ? '#leftList' : '#rightList',
+                win = state[windowType];
+
+            $(container).scroll(function () {
+                let element = this;
+                if (element.scrollHeight - element.scrollTop <= element.clientHeight + 50) {
+                    if (!win.loading && win.hasMore) {
+                        win.page++;
+                        loadItems(windowType, false);
+                    }
+                }
+            });
+        }
+
+        function init() {
+            loadItems('left', true);
+            loadItems('right', true);
+
+            handleScroll('left');
+            handleScroll('right');
+
+            let leftSearchTimer;
+            $('#leftSearch').on('input', function () {
+                clearTimeout(leftSearchTimer);
+                leftSearchTimer = setTimeout(function () {
+                    state.left.search = $('#leftSearch').val();
+                    refreshLeft();
+                }, 300);
+            });
+
+            let rightSearchTimer;
+            $('#rightSearch').on('input', function () {
+                clearTimeout(rightSearchTimer);
+                rightSearchTimer = setTimeout(function () {
+                    state.right.search = $('#rightSearch').val();
+                    refreshRight();
+                }, 300);
+            });
+
+            $('#addBtn').click(addNewItem);
+            $('#newId').keypress(function (e) {
+                if (e.key === 'Enter') {
+                    addNewItem();
+                }
+            });
+        }
+
+        init();
+    });
+</script>
 </body>
 </html>

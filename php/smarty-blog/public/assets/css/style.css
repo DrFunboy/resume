@@ -1,0 +1,304 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #2b2b2b;
+  background: #ffffff;
+  line-height: 1.5;
+}
+
+a {
+  color: #2a7f8e;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.site-header {
+  background: #2f4858;
+  padding: 18px 0;
+}
+.site-header .header-inner {
+  display: flex;
+  align-items: center;
+}
+.site-header .logo {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+.site-header .logo:hover {
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+.site-main {
+  min-height: 60vh;
+  padding: 32px 0;
+}
+
+.site-footer {
+  background: #2f4858;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 28px 0;
+  text-align: center;
+  font-size: 14px;
+}
+
+.category-block {
+  margin-bottom: 56px;
+}
+.category-block-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.category-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: #2b2b2b;
+  margin: 0;
+}
+
+.category-description {
+  color: #8a8a8a;
+  max-width: 640px;
+  margin: 8px 0 0;
+}
+
+.view-all {
+  font-size: 13px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+@media (max-width: 900px) {
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.card {
+  display: flex;
+  flex-direction: column;
+}
+.card-image-link {
+  display: block;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
+}
+.card-image-link:hover .card-image {
+  transform: scale(1.03);
+}
+.card-body {
+  padding-top: 14px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.card-title a {
+  color: #2b2b2b;
+}
+.card-title a:hover {
+  color: #2a7f8e;
+  text-decoration: none;
+}
+.card-details {
+  display: flex;
+  margin: 0 0 10px;
+}
+.card-date {
+  font-size: 12px;
+  color: #8a8a8a;
+}
+.card-views {
+  font-size: 12px;
+  color: #8a8a8a;
+  margin-left: 12px;
+}
+.card-excerpt {
+  font-size: 14px;
+  color: #555;
+  margin: 0 0 12px;
+}
+.card-icon {
+  width: 15px;
+  height: 15px;
+  vertical-align: text-bottom;
+}
+
+.continue-link {
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.empty-state {
+  color: #8a8a8a;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.category-page-header {
+  margin-bottom: 20px;
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid #ececec;
+  border-bottom: 1px solid #ececec;
+  padding: 14px 0;
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+.sort-bar .sort-label {
+  color: #8a8a8a;
+}
+.sort-bar .sort-link {
+  color: #8a8a8a;
+  padding-bottom: 2px;
+}
+.sort-bar .sort-link.active {
+  color: #2a7f8e;
+  border-bottom: 2px solid #2a7f8e;
+  font-weight: 600;
+}
+.sort-bar .sort-link:hover {
+  text-decoration: none;
+  color: #2a7f8e;
+}
+.sort-bar .sort-total {
+  margin-left: auto;
+  color: #8a8a8a;
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 40px;
+}
+.pagination .page-link {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid #ececec;
+  color: #2b2b2b;
+  font-size: 14px;
+}
+.pagination .page-link:hover {
+  text-decoration: none;
+  border-color: #2a7f8e;
+}
+.pagination .page-link.current {
+  background: #2f4858;
+  color: #fff;
+  border-color: #2f4858;
+}
+
+.article-page {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.article-categories {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+.article-categories .category-badge {
+  color: #2a7f8e;
+}
+
+.article-title {
+  font-size: 32px;
+  line-height: 1.2;
+  margin: 0 0 14px;
+}
+
+.article-meta {
+  color: #8a8a8a;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.article-meta span + span {
+  margin-left: 16px;
+}
+
+.article-image {
+  width: 100%;
+  border-radius: 4px;
+  margin-bottom: 24px;
+  display: block;
+}
+
+.article-lead {
+  font-size: 17px;
+  color: #444;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.article-content {
+  font-size: 16px;
+  color: #333;
+}
+
+.similar-block {
+  max-width: 1100px;
+  margin: 64px auto 0;
+}
+
+.prev-page {
+  margin-bottom: 10px;
+}
+
+.not-found {
+  text-align: center;
+  padding: 80px 0;
+}
+.not-found h1 {
+  font-size: 72px;
+  margin: 0;
+  color: #2f4858;
+}
+
+/*# sourceMappingURL=style.css.map */
