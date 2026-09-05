@@ -1,0 +1,28 @@
+services:
+  php:
+    container_name: ${COMPOSE_PROJECT_NAME}_php
+    user: ${UID}:${GID}
+    build:
+      context: ./php
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    volumes:
+      - ${PROJECT_ROOT}:/var/www/html
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    ports:
+        - "80:80"
+
+  mysql:
+    container_name: ${COMPOSE_PROJECT_NAME}_mysql
+    user: ${UID}:${GID}
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${DB_PORT_EXTERNAL}:3306
