@@ -38,3 +38,5 @@ apps script - бронирование встречи и создание мер
 Laravel/Console API parser - Рекурсивный парсер API на базе Laravel 12
 
 Laravel/Amo2Sheets - Интеграция AmoCRM с Google Sheets на базе Laravel 13
+
+Bitrix/Callback-popup - Форма обратного звонка в 1С-Bitrix
