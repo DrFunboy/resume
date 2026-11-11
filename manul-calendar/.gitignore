@@ -1,0 +1,21 @@
+# Gradle / Android
+.gradle/
+build/
+/local.properties
+.cxx/
+.externalNativeBuild/
+captures/
+
+# IDE
+.idea/
+*.iml
+.kotlin/
+
+# Ключи подписи (теряются при переустановке системы — храните копию отдельно)
+*.jks
+*.keystore
+
+# Исходники арта до обработки (большие PNG из генераторов); готовые файлы лежат в app/src/main/res
+/art/raw/
+
+.DS_Store

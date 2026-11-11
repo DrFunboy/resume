@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Иконка-заглушка (морда манула). Заменить на настоящий арт — см. art/ART.md. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- уши -->
+    <path
+        android:fillColor="#9A948A"
+        android:pathData="M33,50 L30,34 L46,41 Z" />
+    <path
+        android:fillColor="#9A948A"
+        android:pathData="M75,50 L78,34 L62,41 Z" />
+    <!-- голова -->
+    <path
+        android:fillColor="#B8B2A7"
+        android:pathData="M30,58 a24,22 0 1,0 48,0 a24,22 0 1,0 -48,0 Z" />
+    <!-- глаза -->
+    <path
+        android:fillColor="#2B2B2B"
+        android:pathData="M43,55 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z" />
+    <path
+        android:fillColor="#2B2B2B"
+        android:pathData="M59,55 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z" />
+    <!-- нос -->
+    <path
+        android:fillColor="#E8A0A0"
+        android:pathData="M51,62 L57,62 L54,66 Z" />
+</vector>
